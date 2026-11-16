@@ -28,7 +28,7 @@ public sealed class BotCommandLine
 
         CommandPrefix.Validators.Add(result =>
         {
-            if (result.GetValueOrDefault<string>().Any(char.IsWhiteSpace))
+            if (result.GetValueOrDefault<string>().ContainsAnyWhiteSpace())
                 result.AddError($"Option {CommandPrefix.Name} must not contain whitespace.");
         });
     }

@@ -41,9 +41,9 @@ runs:
       shell: bash
       env:
         # Written by the release workflow in the commit of each release tag.
-        BOT_REPOSITORY: ""
-        BOT_TAG: ""
-        BOT_SHA256: ""
+        BOT_REPOSITORY: "AvaloniaUI/Avalonia.ContributionBot"
+        BOT_TAG: "v1.0.2"
+        BOT_SHA256: "51a0b52328df8995607f6f48c4dd88c5ad42ac0ab9047f430b846d14aaadb0cb"
       run: |
         set -euo pipefail
 

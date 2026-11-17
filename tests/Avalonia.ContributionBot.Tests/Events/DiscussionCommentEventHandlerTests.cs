@@ -38,7 +38,7 @@ public sealed class DiscussionCommentEventHandlerTests
     [Fact]
     public async Task Vouches_For_Discussion_Author()
     {
-        await HandleAsync("@avalonia-bot vouch");
+        await HandleAsync("!contribution-bot vouch");
 
         var vouch = GetVouch(AuthorId);
         Assert.Equal(VouchStatus.Vouched, vouch.Status);
@@ -56,7 +56,7 @@ public sealed class DiscussionCommentEventHandlerTests
     [Fact]
     public async Task Vouches_For_Mentioned_User_With_Reason()
     {
-        await HandleAsync("@avalonia-bot vouch @someone known from the forums");
+        await HandleAsync("!contribution-bot vouch @someone known from the forums");
 
         var contributor = GetContributor(OtherId);
         Assert.Equal(OtherLogin, contributor.Login);
@@ -75,7 +75,7 @@ public sealed class DiscussionCommentEventHandlerTests
     {
         SetContributors(CreateContributor(AuthorId, AuthorLogin, status: null, signed: true));
 
-        await HandleAsync("@avalonia-bot vouch");
+        await HandleAsync("!contribution-bot vouch");
 
         var contributor = GetContributor(AuthorId);
         Assert.NotNull(contributor.Vouch);
@@ -88,7 +88,7 @@ public sealed class DiscussionCommentEventHandlerTests
     {
         SetContributors(CreateContributor(AuthorId, AuthorLogin, VouchStatus.Denounced, signed: false));
 
-        await HandleAsync("@avalonia-bot vouch");
+        await HandleAsync("!contribution-bot vouch");
 
         Assert.Equal(VouchStatus.Vouched, GetVouch(AuthorId).Status);
         AssertReply(DiscussionReply.Vouched, AuthorLogin);
@@ -99,7 +99,7 @@ public sealed class DiscussionCommentEventHandlerTests
     {
         SetContributors(CreateContributor(AuthorId, AuthorLogin, VouchStatus.Vouched, signed: false));
 
-        await HandleAsync("@avalonia-bot vouch new reason");
+        await HandleAsync("!contribution-bot vouch new reason");
 
         Assert.Equal(VouchRecord.ImportedSource, GetVouch(AuthorId).Source);
         Assert.Empty(_github.CommitMessages);
@@ -111,7 +111,7 @@ public sealed class DiscussionCommentEventHandlerTests
     {
         SetContributors(CreateContributor(AuthorId, "old-login", VouchStatus.Vouched, signed: true));
 
-        await HandleAsync("@avalonia-bot denounce spam");
+        await HandleAsync("!contribution-bot denounce spam");
 
         var contributor = GetContributor(AuthorId);
         Assert.Equal(AuthorLogin, contributor.Login);
@@ -129,7 +129,7 @@ public sealed class DiscussionCommentEventHandlerTests
     {
         SetContributors(CreateContributor(AuthorId, AuthorLogin, VouchStatus.Denounced, signed: false));
 
-        await HandleAsync("@avalonia-bot denounce");
+        await HandleAsync("!contribution-bot denounce");
 
         Assert.Empty(_github.CommitMessages);
         AssertReply(DiscussionReply.AlreadyDenounced, AuthorLogin);
@@ -140,7 +140,7 @@ public sealed class DiscussionCommentEventHandlerTests
     {
         SetContributors(CreateContributor(OtherId, OtherLogin, VouchStatus.Vouched, signed: true));
 
-        await HandleAsync("@avalonia-bot unvouch @someone");
+        await HandleAsync("!contribution-bot unvouch @someone");
 
         var contributor = GetContributor(OtherId);
         Assert.Null(contributor.Vouch);
@@ -155,7 +155,7 @@ public sealed class DiscussionCommentEventHandlerTests
     {
         SetContributors(CreateContributor(OtherId, OtherLogin, VouchStatus.Denounced, signed: false));
 
-        await HandleAsync("@avalonia-bot unvouch @someone");
+        await HandleAsync("!contribution-bot unvouch @someone");
 
         Assert.Null(FindContributor(OtherId));
         Assert.StartsWith($"Remove the denouncement of {OtherLogin} ({OtherId})", Assert.Single(_github.CommitMessages));
@@ -170,7 +170,7 @@ public sealed class DiscussionCommentEventHandlerTests
         if (signed)
             SetContributors(CreateContributor(AuthorId, AuthorLogin, status: null, signed: true));
 
-        await HandleAsync("@avalonia-bot unvouch");
+        await HandleAsync("!contribution-bot unvouch");
 
         Assert.Empty(_github.CommitMessages);
         AssertReply(DiscussionReply.NothingToRemove, AuthorLogin);
@@ -179,7 +179,7 @@ public sealed class DiscussionCommentEventHandlerTests
     [Fact]
     public async Task Replies_When_Mentioned_User_Does_Not_Exist()
     {
-        await HandleAsync("@avalonia-bot vouch @nobody");
+        await HandleAsync("!contribution-bot vouch @nobody");
 
         Assert.Empty(_github.CommitMessages);
         AssertReply(DiscussionReply.UserNotFound, "nobody");
@@ -190,7 +190,7 @@ public sealed class DiscussionCommentEventHandlerTests
     {
         _github.DiscussionReplyTo[CommentNodeId] = "DC_parent";
 
-        await HandlePayloadAsync(SamplePayloads.DiscussionComment("@avalonia-bot vouch", parentId: 555));
+        await HandlePayloadAsync(SamplePayloads.DiscussionComment("!contribution-bot vouch", parentId: 555));
 
         var (_, replyTo, _) = Assert.Single(_github.DiscussionComments);
         Assert.Equal("DC_parent", replyTo);
@@ -203,7 +203,7 @@ public sealed class DiscussionCommentEventHandlerTests
     {
         _github.Permissions[MaintainerLogin] = permission;
 
-        await HandleAsync("@avalonia-bot vouch");
+        await HandleAsync("!contribution-bot vouch");
 
         Assert.Empty(_github.CommitMessages);
         Assert.Empty(_github.DiscussionComments);
@@ -215,7 +215,7 @@ public sealed class DiscussionCommentEventHandlerTests
     [Fact]
     public async Task Ignores_Unknown_Commands()
     {
-        await HandleAsync("@avalonia-bot agree");
+        await HandleAsync("!contribution-bot agree");
 
         Assert.Empty(_github.CommitMessages);
         Assert.Empty(_github.DiscussionComments);
@@ -226,7 +226,7 @@ public sealed class DiscussionCommentEventHandlerTests
     public async Task Ignores_Bot_Comments()
     {
         await HandlePayloadAsync(SamplePayloads.DiscussionComment(
-            "@avalonia-bot vouch",
+            "!contribution-bot vouch",
             commenterLogin: "avalonia-bot[bot]",
             commenterId: 9000,
             commenterType: GitHubUserTypes.Bot));
@@ -238,7 +238,7 @@ public sealed class DiscussionCommentEventHandlerTests
     }
 
     [Theory]
-    [InlineData("@avalonia-bot vouch", CommentActions.Edited, "Ignoring discussion comment action 'edited'.")]
+    [InlineData("!contribution-bot vouch", CommentActions.Edited, "Ignoring discussion comment action 'edited'.")]
     [InlineData("Hello, I'd like to contribute!", CommentActions.Created, "Ignoring discussion comment 666: not a bot command.")]
     public async Task Ignores_Irrelevant_Comments(string body, string action, string expectedLog)
     {

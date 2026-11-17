@@ -13,7 +13,7 @@ public sealed class BotSettings
     /// <summary>The path to the JSON payload of the event.</summary>
     public required string EventFile { get; init; }
 
-    /// <summary>The prefix that starts every bot command, e.g. <c>@avalonia-bot</c>.</summary>
+    /// <summary>The prefix that starts every bot command, e.g. <c>!contribution-bot</c>.</summary>
     public required string CommandPrefix { get; init; }
 
     /// <summary>The repository holding the contributors file.</summary>

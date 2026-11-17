@@ -45,7 +45,8 @@ public sealed class BotCommandLine
 
     public Option<string> CommandPrefix { get; } = StringOption(
         "--command-prefix",
-        "Prefix starting every bot command.", "@avalonia-bot");
+        "Prefix starting every bot command.",
+        "!contribution-bot");
 
     public Option<RepositoryName> StoreRepository { get; } = new("--store-repository")
     {

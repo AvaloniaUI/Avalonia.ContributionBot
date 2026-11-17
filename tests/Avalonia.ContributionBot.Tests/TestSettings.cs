@@ -9,7 +9,7 @@ internal static class TestSettings
     {
         EventName = "test",
         EventFile = "event.json",
-        CommandPrefix = "@avalonia-bot",
+        CommandPrefix = "!contribution-bot",
         StoreRepository = new RepositoryName("ExampleOrg", "Store"),
         StoreBranch = "main",
         StorePath = "contributors.json",

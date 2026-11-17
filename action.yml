@@ -18,7 +18,7 @@ inputs:
     description: Path of the contributors file. Defaults to "contributors.json".
     required: false
   command-prefix:
-    description: Prefix starting every bot command, such as @my-bot. Defaults to "@avalonia-bot".
+    description: Prefix starting every bot command, such as !my-bot. Defaults to "!contribution-bot".
     required: false
   cla-url:
     description: Public URL of the Contributor License Agreement. Defaults to "https://github.com/AvaloniaUI/Avalonia/blob/main/CLA.md".

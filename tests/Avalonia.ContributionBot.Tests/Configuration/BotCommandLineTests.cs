@@ -31,7 +31,7 @@ public sealed class BotCommandLineTests
 
         Assert.Equal(GitHubEventNames.PullRequestTarget, settings.EventName);
         Assert.Equal("/tmp/event.json", settings.EventFile);
-        Assert.Equal("@avalonia-bot", settings.CommandPrefix);
+        Assert.Equal("!contribution-bot", settings.CommandPrefix);
         Assert.Equal(new RepositoryName("ExampleOrg", "ExampleRepo"), settings.StoreRepository);
         Assert.Equal("main", settings.StoreBranch);
         Assert.Equal("contributors.json", settings.StorePath);

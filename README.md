@@ -3,7 +3,7 @@
 A GitHub Actions bot that combines two checks on pull requests:
 
 - **Vouching**: only contributors vouched for by a maintainer may open pull requests. Pull requests from anyone else are closed with a comment explaining how to get vouched for.
-- **Contributor License Agreement**: contributors who are vouched for must accept the CLA before their pull request can be merged, by commenting `@avalonia-bot agree`.
+- **Contributor License Agreement**: contributors who are vouched for must accept the CLA before their pull request can be merged, by commenting `!contribution-bot agree`.
 
 Maintainers vouch for contributors with commands in discussions. Vouches and CLA signatures are stored in a JSON file in a private repository, shared by every repository using the bot.
 
@@ -36,7 +36,7 @@ The bot never creates this file: a missing file is an error.
 
 ### 2. GitHub App
 
-The bot runs as a GitHub App, which gives it a name (the command prefix is usually `@` followed by the App's name) and lets it write to the store repository.
+The bot runs as a GitHub App, which gives its comments an identity and lets it write to the store repository.
 
 1. Create a GitHub App in the organization owning the repositories (**Settings → Developer settings → GitHub Apps → New GitHub App**):
    - **Webhook**: uncheck **Active**. The bot runs from workflows and doesn't need webhook deliveries.
@@ -79,7 +79,7 @@ The workflow creates a token for each run, limited to the calling repository and
        with:
          client-id: ${{ vars.CONTRIBUTION_BOT_CLIENT_ID }}
          store-repository: my-org/contributors
-         command-prefix: "@my-bot"
+         command-prefix: "!my-bot"
          cla-url: https://github.com/my-org/my-repo/blob/main/CLA.md
          introduction-url: https://github.com/my-org/my-repo/discussions/categories/introductions
        secrets:

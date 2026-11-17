@@ -20,7 +20,7 @@ on:
         type: string
         required: false
       command-prefix:
-        description: Prefix starting every bot command, such as @my-bot.
+        description: Prefix starting every bot command, such as !my-bot.
         type: string
         required: true
       cla-url:

@@ -65,7 +65,7 @@ public sealed class PullRequestCommentEventHandlerTests
     {
         SetAuthor(VouchStatus.Vouched, signed: false);
 
-        await HandleAsync(Agree("@Avalonia-Bot AGREE"));
+        await HandleAsync(Agree("!Contribution-Bot AGREE"));
 
         Assert.NotNull(GetAuthor().Cla);
         AssertStatus(CommitState.Success);
@@ -103,7 +103,7 @@ public sealed class PullRequestCommentEventHandlerTests
     {
         SetAuthor(VouchStatus.Vouched, signed: false);
 
-        await HandleAsync(SamplePayloads.IssueComment("@avalonia-bot agree"));
+        await HandleAsync(SamplePayloads.IssueComment("!contribution-bot agree"));
 
         Assert.Null(GetAuthor().Cla);
         Assert.Empty(_github.CommitMessages);
@@ -121,7 +121,7 @@ public sealed class PullRequestCommentEventHandlerTests
         SetAuthor(VouchStatus.Vouched, signed: false);
         _github.Permissions["commenter"] = permission;
 
-        await HandleAsync(SamplePayloads.IssueComment("@avalonia-bot recheck"));
+        await HandleAsync(SamplePayloads.IssueComment("!contribution-bot recheck"));
 
         Assert.Empty(_github.CommitMessages);
         AssertStatus(CommitState.Failure);
@@ -135,7 +135,7 @@ public sealed class PullRequestCommentEventHandlerTests
     {
         SetAuthor(VouchStatus.Vouched, signed: false);
 
-        await HandleAsync(SamplePayloads.IssueComment("@avalonia-bot recheck", commenterLogin: login, commenterId: id));
+        await HandleAsync(SamplePayloads.IssueComment("!contribution-bot recheck", commenterLogin: login, commenterId: id));
 
         Assert.Empty(_github.Statuses);
         Assert.Empty(_github.GetComments(Number));
@@ -149,7 +149,7 @@ public sealed class PullRequestCommentEventHandlerTests
     {
         SetAuthor(VouchStatus.Vouched, signed: false);
 
-        await HandleAsync(Agree("@avalonia-bot agree please"));
+        await HandleAsync(Agree("!contribution-bot agree please"));
 
         Assert.Empty(_github.CommitMessages);
         Assert.Empty(_github.Statuses);
@@ -157,9 +157,9 @@ public sealed class PullRequestCommentEventHandlerTests
     }
 
     [Theory]
-    [InlineData("@avalonia-bot agree", CommentActions.Edited, true, IssueStates.Open, "Ignoring issue comment action 'edited'.")]
-    [InlineData("@avalonia-bot agree", CommentActions.Created, false, IssueStates.Open, "Ignoring comment on issue #42: not a pull request.")]
-    [InlineData("@avalonia-bot agree", CommentActions.Created, true, IssueStates.Closed, "Ignoring comment on pull request #42: the pull request is closed.")]
+    [InlineData("!contribution-bot agree", CommentActions.Edited, true, IssueStates.Open, "Ignoring issue comment action 'edited'.")]
+    [InlineData("!contribution-bot agree", CommentActions.Created, false, IssueStates.Open, "Ignoring comment on issue #42: not a pull request.")]
+    [InlineData("!contribution-bot agree", CommentActions.Created, true, IssueStates.Closed, "Ignoring comment on pull request #42: the pull request is closed.")]
     [InlineData("I agree", CommentActions.Created, true, IssueStates.Open, "Ignoring comment 555: not a bot command.")]
     public async Task Ignores_Irrelevant_Comments(string body, string action, bool isPullRequest, string state, string expectedLog)
     {
@@ -177,7 +177,7 @@ public sealed class PullRequestCommentEventHandlerTests
         SetAuthor(VouchStatus.Vouched, signed: false);
 
         await HandleAsync(SamplePayloads.IssueComment(
-            "@avalonia-bot recheck",
+            "!contribution-bot recheck",
             commenterLogin: "avalonia-bot[bot]",
             commenterId: 9000,
             commenterType: GitHubUserTypes.Bot));
@@ -188,7 +188,7 @@ public sealed class PullRequestCommentEventHandlerTests
             Assert.Single(_logger.Collector.GetSnapshot()).Message);
     }
 
-    private static string Agree(string body = "@avalonia-bot agree")
+    private static string Agree(string body = "!contribution-bot agree")
         => SamplePayloads.IssueComment(body, commenterLogin: AuthorLogin, commenterId: AuthorId);
 
     private static string RenderComment(BotCommentTemplate template)

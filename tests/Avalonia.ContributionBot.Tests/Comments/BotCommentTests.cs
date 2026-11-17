@@ -33,7 +33,7 @@ public sealed class BotCommentTests
 
         var claRequired = BotComment.Render(BotCommentTemplate.ClaRequired, "someone", s_repository, TestSettings.Default);
         Assert.Contains("(https://example.com/CLA.md)", claRequired);
-        Assert.Contains("@avalonia-bot agree", claRequired);
+        Assert.Contains("!contribution-bot agree", claRequired);
     }
 
     [Fact]

@@ -108,8 +108,6 @@ The workflow runs the bot on `pull_request_target`, which runs in the context of
 |---|---|
 | `private-key` | Private key of the GitHub App |
 
-Workflows that create their own token can use the composite action `AvaloniaUI/Avalonia.ContributionBot@v1` directly. It takes the same inputs except `client-id`, plus `token`, and requires a Linux x64 runner.
-
 ## Development
 
 The bot is a .NET 11 console application, published with Native AOT.
@@ -134,8 +132,8 @@ Run the **Release** workflow from `main` with the new version (for example `1.2.
 
 1. Builds and tests the bot, then publishes the Native AOT binary for linux-x64.
 2. Generates a build provenance attestation for the binary.
-3. Creates a release commit on top of `main` that pins the binary's tag and SHA-256 in `action.yml`, and the action's tag in the reusable workflow.
-4. Pushes that commit as the tag `v1.2.0` and moves the major tag `v1` to it. The commit isn't pushed to `main`, so `action.yml` on `main` stays unpinned and only works from a release tag.
+3. Creates a release commit on top of `main` that pins the binary's tag and SHA-256 in the reusable workflow.
+4. Pushes that commit as the tag `v1.2.0` and moves the major tag `v1` to it. The commit isn't pushed to `main`, so the reusable workflow on `main` stays unpinned and only works from a release tag.
 5. Creates the GitHub release with the binary.
 
-The action downloads the binary of its own tag and checks its SHA-256 before running it, so a replaced release asset fails the check.
+The reusable workflow downloads the binary of its own tag and checks its SHA-256 before running it, so a replaced release asset fails the check.

@@ -1,0 +1,133 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release, without the leading v (e.g. 1.2.0).
+        type: string
+        required: true
+
+permissions: {}
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    env:
+      VERSION: ${{ inputs.version }}
+      ASSET: avalonia-contribution-bot-linux-x64
+    steps:
+      - name: Check the version
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::The version must be in the major.minor.patch format, got '$VERSION'."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v7
+
+      - name: Check that the tag doesn't exist
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" > /dev/null; then
+            echo "::error::The tag v$VERSION already exists."
+            exit 1
+          fi
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Build
+        run: dotnet build --configuration Release
+
+      - name: Test
+        run: dotnet test --configuration Release --no-build
+
+      - name: Publish (Native AOT, linux-x64)
+        run: >-
+          dotnet publish src/Avalonia.ContributionBot --configuration Release --runtime linux-x64
+          -p:Version="$VERSION" -p:ContinuousIntegrationBuild=true
+
+      - name: Prepare the asset
+        id: asset
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cp artifacts/publish/Avalonia.ContributionBot/release_linux-x64/Avalonia.ContributionBot "$RUNNER_TEMP/$ASSET"
+          path="$RUNNER_TEMP/$ASSET"
+
+          actual="$("$path" --version)"
+          if [[ "$actual" != "$VERSION"* ]]; then
+            echo "::error::The binary reports version '$actual', expected $VERSION."
+            exit 1
+          fi
+
+          echo "path=$path" >> "$GITHUB_OUTPUT"
+          echo "sha256=$(sha256sum "$path" | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: ${{ steps.asset.outputs.path }}
+
+      # The tagged commit pins the binary in action.yml and the action in the reusable workflow.
+      # It is pushed only as tags: main keeps the unpinned files.
+      - name: Create the release commit and tags
+        shell: bash
+        env:
+          SHA256: ${{ steps.asset.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+
+          tag="v$VERSION"
+          major="v${VERSION%%.*}"
+          workflow=.github/workflows/contribution-bot.yml
+
+          sed -i \
+            -e "s|^\( *BOT_REPOSITORY:\) \"\"$|\1 \"$GITHUB_REPOSITORY\"|" \
+            -e "s|^\( *BOT_TAG:\) \"\"$|\1 \"$tag\"|" \
+            -e "s|^\( *BOT_SHA256:\) \"\"$|\1 \"$SHA256\"|" \
+            action.yml
+          sed -i -e "s|^\( *uses: \)[^@ ]*@main$|\1$GITHUB_REPOSITORY@$tag|" "$workflow"
+
+          git diff
+          if [[ "$(git diff --numstat -- action.yml)" != $'3\t3\taction.yml' ||
+                "$(git diff --numstat -- "$workflow")" != $'1\t1\t'"$workflow" ]]; then
+            echo "::error::Pinning the release didn't change the expected lines."
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --message "Release $tag" -- action.yml "$workflow"
+          git tag "$tag"
+          git tag --force "$major"
+          git push origin "refs/tags/$tag"
+          git push --force origin "refs/tags/$major"
+
+      - name: Create the GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ASSET_PATH: ${{ steps.asset.outputs.path }}
+          SHA256: ${{ steps.asset.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+
+          gh release create "v$VERSION" "$ASSET_PATH" \
+            --verify-tag \
+            --title "v$VERSION" \
+            --generate-notes \
+            --notes "SHA-256 of \`$ASSET\`: \`$SHA256\`"

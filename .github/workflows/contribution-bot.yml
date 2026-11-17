@@ -1,0 +1,106 @@
+name: Contribution Bot
+
+on:
+  workflow_call:
+    inputs:
+      client-id:
+        description: Client ID of the GitHub App the bot runs as.
+        type: string
+        required: true
+      store-repository:
+        description: Repository holding the contributors file (owner/name), owned by the same account as the calling repository.
+        type: string
+        required: true
+      store-branch:
+        description: Branch holding the contributors file. Defaults to "main".
+        type: string
+        required: false
+      store-path:
+        description: Path of the contributors file. Defaults to "contributors.json".
+        type: string
+        required: false
+      command-prefix:
+        description: Prefix starting every bot command, such as @my-bot.
+        type: string
+        required: true
+      cla-url:
+        description: Public URL of the Contributor License Agreement. Defaults to "https://github.com/AvaloniaUI/Avalonia/blob/main/CLA.md".
+        type: string
+        required: false
+      introduction-url:
+        description: URL where new contributors introduce themselves. Defaults to "https://github.com/AvaloniaUI/Avalonia/discussions/categories/introductions".
+        type: string
+        required: false
+      status-context:
+        description: Context name of the commit status. Defaults to "Avalonia Contribution / CLA".
+        type: string
+        required: false
+      dry-run:
+        description: Log write operations instead of performing them.
+        type: boolean
+        required: false
+        default: false
+    secrets:
+      private-key:
+        description: Private key of the GitHub App the bot runs as.
+        required: true
+
+permissions: {}
+
+jobs:
+  bot:
+    # Comments that can't hold a command don't start a runner. Comments posted by bots, including this one, are skipped too.
+    if: >-
+      github.event_name == 'pull_request_target' ||
+      (github.event_name == 'issue_comment' && github.event.issue.pull_request &&
+        github.event.comment.user.type != 'Bot' && contains(github.event.comment.body, inputs.command-prefix)) ||
+      (github.event_name == 'discussion_comment' &&
+        github.event.comment.user.type != 'Bot' && contains(github.event.comment.body, inputs.command-prefix))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions: {}
+    steps:
+      - name: Check the store repository
+        id: store
+        shell: bash
+        env:
+          STORE_REPOSITORY: ${{ inputs.store-repository }}
+        run: |
+          set -euo pipefail
+
+          owner="${STORE_REPOSITORY%%/*}"
+          if [[ "$owner" != "$GITHUB_REPOSITORY_OWNER" ]]; then
+            echo "::error::The store repository must belong to $GITHUB_REPOSITORY_OWNER, got $STORE_REPOSITORY."
+            exit 1
+          fi
+
+          echo "name=${STORE_REPOSITORY#*/}" >> "$GITHUB_OUTPUT"
+
+      - name: Create the GitHub App token
+        id: token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ inputs.client-id }}
+          private-key: ${{ secrets.private-key }}
+          owner: ${{ github.repository_owner }}
+          repositories: |
+            ${{ github.event.repository.name }}
+            ${{ steps.store.outputs.name }}
+          permission-contents: write
+          permission-discussions: write
+          permission-issues: write
+          permission-pull-requests: write
+          permission-statuses: write
+
+      - name: Run the bot
+        uses: AvaloniaUI/Avalonia.ContributionBot@main
+        with:
+          token: ${{ steps.token.outputs.token }}
+          store-repository: ${{ inputs.store-repository }}
+          store-branch: ${{ inputs.store-branch }}
+          store-path: ${{ inputs.store-path }}
+          command-prefix: ${{ inputs.command-prefix }}
+          cla-url: ${{ inputs.cla-url }}
+          introduction-url: ${{ inputs.introduction-url }}
+          status-context: ${{ inputs.status-context }}
+          dry-run: ${{ inputs.dry-run }}

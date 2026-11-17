@@ -28,7 +28,7 @@ on:
         type: string
         required: false
       introduction-url:
-        description: URL where new contributors introduce themselves. Defaults to "https://github.com/AvaloniaUI/Avalonia/discussions/categories/introductions".
+        description: URL where new contributors introduce themselves. Defaults to "https://github.com/AvaloniaUI/Avalonia/discussions/new?category=introductions".
         type: string
         required: false
       status-context:

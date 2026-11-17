@@ -72,7 +72,7 @@ public sealed class BotCommandLine
     public Option<Uri> IntroductionUrl { get; } = UrlOption(
         "--introduction-url",
         "URL where new contributors introduce themselves.",
-        new Uri("https://github.com/AvaloniaUI/Avalonia/discussions/categories/introductions"));
+        new Uri("https://github.com/AvaloniaUI/Avalonia/discussions/new?category=introductions"));
 
     public Option<string> StatusContext { get; } = StringOption(
         "--status-context",

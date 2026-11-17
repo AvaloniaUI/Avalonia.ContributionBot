@@ -24,7 +24,7 @@ inputs:
     description: Public URL of the Contributor License Agreement. Defaults to "https://github.com/AvaloniaUI/Avalonia/blob/main/CLA.md".
     required: false
   introduction-url:
-    description: URL where new contributors introduce themselves. Defaults to "https://github.com/AvaloniaUI/Avalonia/discussions/categories/introductions".
+    description: URL where new contributors introduce themselves. Defaults to "https://github.com/AvaloniaUI/Avalonia/discussions/new?category=introductions".
     required: false
   status-context:
     description: Context name of the commit status. Defaults to "Avalonia Contribution / CLA".

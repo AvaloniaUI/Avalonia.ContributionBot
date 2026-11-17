@@ -82,8 +82,7 @@ jobs:
         with:
           subject-path: ${{ steps.asset.outputs.path }}
 
-      # The tagged commit pins the binary in the reusable workflow.
-      # It is pushed only as tags: main keeps the unpinned workflow.
+      # The tagged commit pins the binary in action.yml
       - name: Create the release commit and tags
         shell: bash
         env:
@@ -95,21 +94,26 @@ jobs:
           major="v${VERSION%%.*}"
           workflow=.github/workflows/contribution-bot.yml
 
+          if ! grep --quiet --line-regexp " *uses: $GITHUB_REPOSITORY@$major" "$workflow"; then
+            echo "::error::The reusable workflow must use the action at @$major. Update it on main before releasing $tag."
+            exit 1
+          fi
+
           sed -i \
             -e "s|^\( *BOT_REPOSITORY:\) \"\"$|\1 \"$GITHUB_REPOSITORY\"|" \
             -e "s|^\( *BOT_TAG:\) \"\"$|\1 \"$tag\"|" \
             -e "s|^\( *BOT_SHA256:\) \"\"$|\1 \"$SHA256\"|" \
-            "$workflow"
+            action.yml
 
           git diff
-          if [[ "$(git diff --numstat -- "$workflow")" != $'3\t3\t'"$workflow" ]]; then
+          if [[ "$(git diff --numstat)" != $'3\t3\taction.yml' ]]; then
             echo "::error::Pinning the release didn't change the expected lines."
             exit 1
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit --message "Release $tag" -- "$workflow"
+          git commit --message "Release $tag" -- action.yml
           git tag "$tag"
           git tag --force "$major"
           git push origin "refs/tags/$tag"

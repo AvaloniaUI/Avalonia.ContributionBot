@@ -49,6 +49,7 @@ permissions: {}
 
 jobs:
   bot:
+    name: Contribution Bot
     # Comments that can't hold a command don't start a runner. Comments posted by bots, including this one, are skipped too.
     if: >-
       github.event_name == 'pull_request_target' ||
@@ -60,7 +61,7 @@ jobs:
     timeout-minutes: 10
     permissions: {}
     steps:
-      - name: Check the store repository
+      - name: Check store repository
         id: store
         shell: bash
         env:
@@ -76,7 +77,7 @@ jobs:
 
           echo "name=${STORE_REPOSITORY#*/}" >> "$GITHUB_OUTPUT"
 
-      - name: Create the GitHub App token
+      - name: Create GitHub App token
         id: token
         uses: actions/create-github-app-token@v3
         with:
@@ -92,55 +93,15 @@ jobs:
           permission-pull-requests: write
           permission-statuses: write
 
-      - name: Download bot
-        shell: bash
-        env:
-          # Written by the release workflow in the commit of each release tag.
-          BOT_REPOSITORY: ""
-          BOT_TAG: ""
-          BOT_SHA256: ""
-        run: |
-          set -euo pipefail
-
-          if [[ -z "$BOT_TAG" ]]; then
-            echo "::error::This workflow only runs from a release tag, such as @v1."
-            exit 1
-          fi
-
-          bot="$RUNNER_TEMP/avalonia-contribution-bot"
-          curl --fail --silent --show-error --location --retry 3 --output "$bot" \
-            "https://github.com/$BOT_REPOSITORY/releases/download/$BOT_TAG/avalonia-contribution-bot-linux-x64"
-          echo "$BOT_SHA256  $bot" | sha256sum --check --strict
-          chmod +x "$bot"
-
       - name: Run bot
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ steps.token.outputs.token }}
-          STORE_REPOSITORY: ${{ inputs.store-repository }}
-          STORE_BRANCH: ${{ inputs.store-branch }}
-          STORE_PATH: ${{ inputs.store-path }}
-          COMMAND_PREFIX: ${{ inputs.command-prefix }}
-          CLA_URL: ${{ inputs.cla-url }}
-          INTRODUCTION_URL: ${{ inputs.introduction-url }}
-          STATUS_CONTEXT: ${{ inputs.status-context }}
-          DRY_RUN: ${{ inputs.dry-run }}
-        run: |
-          set -euo pipefail
-
-          args=(
-            --event-name "$GITHUB_EVENT_NAME"
-            --event-file "$GITHUB_EVENT_PATH"
-            --store-repository "$STORE_REPOSITORY"
-            --command-prefix "$COMMAND_PREFIX"
-          )
-
-          # Empty inputs keep the defaults of the bot.
-          if [[ -n "$STORE_BRANCH" ]]; then args+=(--store-branch "$STORE_BRANCH"); fi
-          if [[ -n "$STORE_PATH" ]]; then args+=(--store-path "$STORE_PATH"); fi
-          if [[ -n "$CLA_URL" ]]; then args+=(--cla-url "$CLA_URL"); fi
-          if [[ -n "$INTRODUCTION_URL" ]]; then args+=(--introduction-url "$INTRODUCTION_URL"); fi
-          if [[ -n "$STATUS_CONTEXT" ]]; then args+=(--status-context "$STATUS_CONTEXT"); fi
-          if [[ "$DRY_RUN" == "true" ]]; then args+=(--dry-run); fi
-
-          "$RUNNER_TEMP/avalonia-contribution-bot" "${args[@]}"
+        uses: AvaloniaUI/Avalonia.ContributionBot@v1
+        with:
+          token: ${{ steps.token.outputs.token }}
+          store-repository: ${{ inputs.store-repository }}
+          store-branch: ${{ inputs.store-branch }}
+          store-path: ${{ inputs.store-path }}
+          command-prefix: ${{ inputs.command-prefix }}
+          cla-url: ${{ inputs.cla-url }}
+          introduction-url: ${{ inputs.introduction-url }}
+          status-context: ${{ inputs.status-context }}
+          dry-run: ${{ inputs.dry-run }}

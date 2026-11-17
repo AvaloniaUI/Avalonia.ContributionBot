@@ -54,6 +54,10 @@ public sealed class CollaboratorPermission
 {
     /// <summary>The base permission, one of the <see cref="CollaboratorPermissions"/> values.</summary>
     public required string Permission { get; init; }
+
+    /// <summary>Whether the user can push to the repository, which includes the <c>maintain</c> role.</summary>
+    public bool HasWriteAccess
+        => Permission is CollaboratorPermissions.Admin or CollaboratorPermissions.Write;
 }
 
 /// <summary>

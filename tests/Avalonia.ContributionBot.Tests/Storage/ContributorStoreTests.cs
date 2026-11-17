@@ -92,7 +92,7 @@ public sealed class ContributorStoreTests
     public async Task Gives_Up_After_Max_Attempts()
     {
         var calls = 0;
-        _github.BeforePut = () => _github.SetContent(Path, _github.GetContent(Path)!);
+        _github.BeforePut = () => _github.SetContent(Path, _github.GetContent(Path));
 
         await Assert.ThrowsAsync<GitHubConflictException>(
             () => _store.UpdateAsync(

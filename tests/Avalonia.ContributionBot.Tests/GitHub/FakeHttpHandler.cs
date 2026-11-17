@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
 
 namespace Avalonia.ContributionBot.Tests.GitHub;
 
@@ -28,9 +29,10 @@ internal sealed class FakeHttpHandler : HttpMessageHandler
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         var body = request.Content is null ? null : await request.Content.ReadAsStringAsync(cancellationToken);
-        Requests.Add(new RecordedRequest(request.Method, request.RequestUri!, body, request.Headers));
+        var uri = request.RequestUri ?? throw new InvalidOperationException("The request has no URI.");
+        Requests.Add(new RecordedRequest(request.Method, uri, body, request.Headers));
 
-        var pathAndQuery = request.RequestUri!.PathAndQuery;
+        var pathAndQuery = uri.PathAndQuery;
         var route = _routes.FirstOrDefault(r => r.Method == request.Method && r.PathAndQuery == pathAndQuery)
             ?? throw new InvalidOperationException($"Unexpected request {request.Method} {pathAndQuery}");
 
@@ -62,5 +64,11 @@ internal sealed class FakeHttpHandler : HttpMessageHandler
         public Uri Uri { get; } = uri;
         public string? Body { get; } = body;
         public HttpRequestHeaders Headers { get; } = headers;
+
+        public JsonElement GetJsonBody()
+        {
+            Assert.NotNull(Body);
+            return JsonElement.Parse(Body);
+        }
     }
 }

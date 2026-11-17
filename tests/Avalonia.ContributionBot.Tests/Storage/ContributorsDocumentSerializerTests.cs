@@ -64,23 +64,31 @@ public sealed class ContributorsDocumentSerializerTests
     {
         var document = ContributorsDocumentSerializer.Deserialize(Sample);
 
-        var user = document.Find(1234567)!;
+        var user = document.Find(1234567);
+        Assert.NotNull(user);
         Assert.Equal("some-user", user.Login);
-        Assert.Equal(VouchStatus.Vouched, user.Vouch!.Status);
+        Assert.NotNull(user.Vouch);
+        Assert.Equal(VouchStatus.Vouched, user.Vouch.Status);
         Assert.Equal(new DateTimeOffset(2026, 11, 20, 10, 0, 0, TimeSpan.Zero), user.Vouch.At);
-        Assert.Equal(7654321, user.Vouch.By!.Id);
+        Assert.NotNull(user.Vouch.By);
+        Assert.Equal(7654321, user.Vouch.By.Id);
         Assert.Equal("some-maintainer", user.Vouch.By.Login);
         Assert.Null(user.Vouch.Reason);
-        Assert.Equal(new DateTimeOffset(2026, 11, 21, 9, 0, 0, TimeSpan.Zero), user.Cla!.SignedAt);
+        Assert.NotNull(user.Cla);
+        Assert.Equal(new DateTimeOffset(2026, 11, 21, 9, 0, 0, TimeSpan.Zero), user.Cla.SignedAt);
         Assert.Equal("https://github.com/AvaloniaUI/Avalonia/pull/789#issuecomment-1011", user.Cla.Source);
 
-        var spammer = document.Find(2345678)!;
-        Assert.Equal(VouchStatus.Denounced, spammer.Vouch!.Status);
+        var spammer = document.Find(2345678);
+        Assert.NotNull(spammer);
+        Assert.NotNull(spammer.Vouch);
+        Assert.Equal(VouchStatus.Denounced, spammer.Vouch.Status);
         Assert.Equal("Spam & self-promotion, déjà vu", spammer.Vouch.Reason);
         Assert.Null(spammer.Cla);
 
-        var imported = document.Find(3456789)!;
-        Assert.Equal(VouchRecord.ImportedSource, imported.Vouch!.Source);
+        var imported = document.Find(3456789);
+        Assert.NotNull(imported);
+        Assert.NotNull(imported.Vouch);
+        Assert.Equal(VouchRecord.ImportedSource, imported.Vouch.Source);
         Assert.Null(imported.Vouch.At);
         Assert.Null(imported.Vouch.By);
 

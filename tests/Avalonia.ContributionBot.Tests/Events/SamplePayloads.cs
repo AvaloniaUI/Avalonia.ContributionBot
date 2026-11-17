@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using Avalonia.ContributionBot.GitHub;
 
 namespace Avalonia.ContributionBot.Tests.Events;
 
@@ -40,7 +41,10 @@ internal static class SamplePayloads
         string body,
         string action = "created",
         bool isPullRequest = true,
-        string state = "open")
+        string state = "open",
+        string commenterLogin = "commenter",
+        long commenterId = 3003,
+        string commenterType = GitHubUserTypes.User)
     {
         var pullRequest = isPullRequest
             ? """, "pull_request": { "url": "https://api.github.com/repos/AvaloniaUI/Avalonia/pulls/42" }"""
@@ -58,7 +62,7 @@ internal static class SamplePayloads
                  "comment": {
                    "id": 555,
                    "body": {{JsonSerializer.Serialize(body)}},
-                   "user": { "login": "commenter", "id": 3003, "type": "User" },
+                   "user": { "login": "{{commenterLogin}}", "id": {{commenterId}}, "type": "{{commenterType}}" },
                    "html_url": "https://github.com/AvaloniaUI/Avalonia/pull/42#issuecomment-555",
                    "created_at": "2026-11-16T10:00:00Z"
                  },

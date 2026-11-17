@@ -95,7 +95,7 @@ internal static partial class Program
 
             var dispatcher = new EventDispatcher(
                 new PullRequestEventHandler(evaluator, loggerFactory.CreateLogger<PullRequestEventHandler>()),
-                new IssueCommentEventHandler(settings, loggerFactory.CreateLogger<IssueCommentEventHandler>()),
+                new IssueCommentEventHandler(github, store, evaluator, settings, loggerFactory.CreateLogger<IssueCommentEventHandler>()),
                 new DiscussionCommentEventHandler(settings, loggerFactory.CreateLogger<DiscussionCommentEventHandler>()),
                 loggerFactory.CreateLogger<EventDispatcher>());
 

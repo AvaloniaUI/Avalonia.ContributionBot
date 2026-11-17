@@ -171,8 +171,10 @@ public sealed class PullRequestEvaluatorTests
         AssertStatus(CommitState.Success);
         Assert.Single(_github.CommitMessages);
 
-        var document = ContributorsDocumentSerializer.Deserialize(_github.GetContent(TestSettings.Default.StorePath)!);
-        Assert.Equal("renamed", document.Find(SignedId)!.Login);
+        var document = ContributorsDocumentSerializer.Deserialize(_github.GetContent(TestSettings.Default.StorePath));
+        var contributor = document.Find(SignedId);
+        Assert.NotNull(contributor);
+        Assert.Equal("renamed", contributor.Login);
     }
 
     [Fact]

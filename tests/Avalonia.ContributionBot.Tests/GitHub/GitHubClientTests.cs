@@ -1,6 +1,5 @@
 using System.Net;
 using System.Text;
-using System.Text.Json.Nodes;
 using Avalonia.ContributionBot.GitHub;
 
 namespace Avalonia.ContributionBot.Tests.GitHub;
@@ -231,11 +230,11 @@ public sealed class GitHubClientTests
 
         Assert.Equal("blob2", sha);
 
-        var body = JsonNode.Parse(Assert.Single(handler.Requests).Body!)!;
-        Assert.Equal("Update contributors", body["message"]!.GetValue<string>());
-        Assert.Equal("new content", Encoding.UTF8.GetString(Convert.FromBase64String(body["content"]!.GetValue<string>())));
-        Assert.Equal("main", body["branch"]!.GetValue<string>());
-        Assert.Equal("blob1", body["sha"]!.GetValue<string>());
+        var body = Assert.Single(handler.Requests).GetJsonBody();
+        Assert.Equal("Update contributors", body.GetProperty("message").GetString());
+        Assert.Equal("new content", Encoding.UTF8.GetString(body.GetProperty("content").GetBytesFromBase64()));
+        Assert.Equal("main", body.GetProperty("branch").GetString());
+        Assert.Equal("blob1", body.GetProperty("sha").GetString());
     }
 
     [Fact]
@@ -250,8 +249,8 @@ public sealed class GitHubClientTests
 
         await CreateClient(handler).PutFileAsync(s_repository, "contributors.json", "main", "content", null, "Create", Token);
 
-        var body = JsonNode.Parse(Assert.Single(handler.Requests).Body!)!.AsObject();
-        Assert.False(body.ContainsKey("sha"));
+        var body = Assert.Single(handler.Requests).GetJsonBody();
+        Assert.False(body.TryGetProperty("sha", out _));
     }
 
     [Fact]
@@ -324,8 +323,8 @@ public sealed class GitHubClientTests
 
         Assert.Equal(7, created.Id);
         Assert.Equal("updated", updated.Body);
-        Assert.Equal("created", JsonNode.Parse(handler.Requests[0].Body!)!["body"]!.GetValue<string>());
-        Assert.Equal("updated", JsonNode.Parse(handler.Requests[1].Body!)!["body"]!.GetValue<string>());
+        Assert.Equal("created", handler.Requests[0].GetJsonBody().GetProperty("body").GetString());
+        Assert.Equal("updated", handler.Requests[1].GetJsonBody().GetProperty("body").GetString());
     }
 
     [Fact]
@@ -340,7 +339,7 @@ public sealed class GitHubClientTests
 
         await CreateClient(handler).ClosePullRequestAsync(s_repository, 42, Token);
 
-        Assert.Equal("closed", JsonNode.Parse(Assert.Single(handler.Requests).Body!)!["state"]!.GetValue<string>());
+        Assert.Equal("closed", Assert.Single(handler.Requests).GetJsonBody().GetProperty("state").GetString());
     }
 
     [Theory]
@@ -361,10 +360,10 @@ public sealed class GitHubClientTests
             new CommitStatus { State = state, Context = "Avalonia Contribution / CLA", Description = "Description" },
             Token);
 
-        var body = JsonNode.Parse(Assert.Single(handler.Requests).Body!)!.AsObject();
-        Assert.Equal(expectedState, body["state"]!.GetValue<string>());
-        Assert.Equal("Avalonia Contribution / CLA", body["context"]!.GetValue<string>());
-        Assert.Equal("Description", body["description"]!.GetValue<string>());
+        var body = Assert.Single(handler.Requests).GetJsonBody();
+        Assert.Equal(expectedState, body.GetProperty("state").GetString());
+        Assert.Equal("Avalonia Contribution / CLA", body.GetProperty("context").GetString());
+        Assert.Equal("Description", body.GetProperty("description").GetString());
     }
 
     [Fact]
@@ -381,11 +380,13 @@ public sealed class GitHubClientTests
 
         Assert.Equal(new Uri("https://github.com/d/1#c"), url);
 
-        var body = JsonNode.Parse(Assert.Single(handler.Requests).Body!)!;
-        Assert.Contains("addDiscussionComment", body["query"]!.GetValue<string>());
-        Assert.Equal("D_1", body["variables"]!["discussionId"]!.GetValue<string>());
-        Assert.Equal("DC_2", body["variables"]!["replyToId"]!.GetValue<string>());
-        Assert.Equal("Hello", body["variables"]!["body"]!.GetValue<string>());
+        var body = Assert.Single(handler.Requests).GetJsonBody();
+        Assert.Contains("addDiscussionComment", body.GetProperty("query").GetString());
+
+        var variables = body.GetProperty("variables");
+        Assert.Equal("D_1", variables.GetProperty("discussionId").GetString());
+        Assert.Equal("DC_2", variables.GetProperty("replyToId").GetString());
+        Assert.Equal("Hello", variables.GetProperty("body").GetString());
     }
 
     [Fact]

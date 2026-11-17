@@ -1,6 +1,4 @@
-using System.Text.Json;
 using Avalonia.ContributionBot.Evaluation;
-using Avalonia.ContributionBot.GitHub;
 using Microsoft.Extensions.Logging;
 
 namespace Avalonia.ContributionBot.Events;
@@ -14,8 +12,7 @@ public sealed partial class PullRequestEventHandler(PullRequestEvaluator evaluat
 {
     public Task HandleAsync(PullRequestEvent payload, CancellationToken cancellationToken)
     {
-        if (!RepositoryName.TryParse(payload.Repository.FullName, out var repository))
-            throw new InvalidOperationException($"Invalid repository name '{payload.Repository.FullName}' in the event payload.");
+        var repository = payload.Repository.GetName();
 
         switch (payload.Action)
         {

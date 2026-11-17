@@ -5,6 +5,11 @@ namespace Avalonia.ContributionBot.Events;
 public sealed class EventRepository
 {
     public required string FullName { get; init; }
+
+    public RepositoryName GetName()
+        => RepositoryName.TryParse(FullName, out var name)
+            ? name
+            : throw new InvalidOperationException($"Invalid repository name '{FullName}' in the event payload.");
 }
 
 /// <summary>The payload of the <c>pull_request_target</c> event.</summary>

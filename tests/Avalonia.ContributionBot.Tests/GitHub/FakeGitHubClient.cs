@@ -33,10 +33,15 @@ internal sealed class FakeGitHubClient : IGitHubClient
 
     public List<int> ClosedPullRequests { get; } = [];
 
+    public Dictionary<int, PullRequest> PullRequests { get; } = [];
+
     public List<(string Sha, CommitStatus Status)> Statuses { get; } = [];
 
-    public string? GetContent(string path)
-        => _files.TryGetValue(path, out var file) ? file.Content : null;
+    public string GetContent(string path)
+    {
+        Assert.True(_files.TryGetValue(path, out var file), $"The file '{path}' doesn't exist.");
+        return file.Content;
+    }
 
     public void SetContent(string path, string content)
         => _files[path] = new RepositoryFile { Content = content, Sha = $"sha{_nextSha++}" };
@@ -133,7 +138,9 @@ internal sealed class FakeGitHubClient : IGitHubClient
     }
 
     public Task<PullRequest> GetPullRequestAsync(RepositoryName repository, int number, CancellationToken cancellationToken)
-        => throw new NotSupportedException();
+        => PullRequests.TryGetValue(number, out var pullRequest)
+            ? Task.FromResult(pullRequest)
+            : throw new GitHubApiException(HttpStatusCode.NotFound, $"GET pull request {number}", "Not Found");
 
     public Task<Uri> AddDiscussionCommentAsync(string discussionNodeId, string? replyToNodeId, string body, CancellationToken cancellationToken)
         => throw new NotSupportedException();

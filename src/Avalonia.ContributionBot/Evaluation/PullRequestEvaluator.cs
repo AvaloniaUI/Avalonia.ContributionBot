@@ -64,7 +64,7 @@ public sealed partial class PullRequestEvaluator(
         if (!isBot)
         {
             var permission = await github.GetCollaboratorPermissionAsync(repository, author.Login, cancellationToken);
-            hasWriteAccess = permission.Permission is CollaboratorPermissions.Admin or CollaboratorPermissions.Write;
+            hasWriteAccess = permission.HasWriteAccess;
         }
 
         Contributor? contributor = null;

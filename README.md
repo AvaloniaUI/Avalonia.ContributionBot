@@ -2,7 +2,7 @@
 
 A GitHub Actions bot that combines two checks on pull requests:
 
-- **Vouching**: only contributors vouched for by a maintainer may open pull requests. Pull requests from anyone else are closed with a comment explaining how to get vouched for.
+- **Vouching**: only contributors vouched for by a maintainer may open pull requests. Pull requests from anyone else are closed with a comment explaining how to get vouched for. For more information about vouching, see the [Vouch project](https://github.com/mitchellh/vouch), which inspired this one.
 - **Contributor License Agreement**: contributors who are vouched for must accept the CLA before their pull request can be merged, by commenting `!contribution-bot agree`.
 
 Maintainers vouch for contributors with commands in discussions. Vouches and CLA signatures are stored in a JSON file in a private repository, shared by every repository using the bot.

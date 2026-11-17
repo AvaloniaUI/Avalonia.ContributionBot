@@ -36,6 +36,12 @@ public sealed class PullRequest
     public required GitHubUser User { get; init; }
 
     public required GitRef Head { get; init; }
+
+    /// <summary>The state of the pull request, one of the <see cref="IssueStates"/> values.</summary>
+    public required string State { get; init; }
+
+    /// <summary>The date the pull request was merged, or null if it isn't merged.</summary>
+    public DateTimeOffset? MergedAt { get; init; }
 }
 
 public sealed class IssueComment
@@ -191,6 +197,23 @@ internal sealed class CommitStatusRequest
     public required string Description { get; init; }
 }
 
+internal sealed class IssueEvent
+{
+    /// <summary>The kind of event, such as <see cref="IssueEventTypes.Closed"/>.</summary>
+    public required string Event { get; init; }
+
+    /// <summary>The account that performed the event, or null if it has been deleted.</summary>
+    public GitHubUser? Actor { get; init; }
+}
+
+/// <summary>
+/// The values of <see cref="IssueEvent.Event"/> used by the bot.
+/// </summary>
+internal static class IssueEventTypes
+{
+    public const string Closed = "closed";
+}
+
 internal sealed class ErrorResponse
 {
     public string? Message { get; init; }
@@ -210,6 +233,7 @@ internal sealed class ErrorResponse
 [JsonSerializable(typeof(IssueComment))]
 [JsonSerializable(typeof(IssueCommentEvent))]
 [JsonSerializable(typeof(List<IssueComment>))]
+[JsonSerializable(typeof(List<IssueEvent>))]
 [JsonSerializable(typeof(PullRequest))]
 [JsonSerializable(typeof(PullRequestEvent))]
 [JsonSerializable(typeof(PutContentRequest))]

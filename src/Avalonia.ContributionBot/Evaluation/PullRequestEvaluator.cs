@@ -1,3 +1,4 @@
+using System.Net;
 using Avalonia.ContributionBot.Comments;
 using Avalonia.ContributionBot.Configuration;
 using Avalonia.ContributionBot.GitHub;
@@ -18,6 +19,7 @@ public sealed partial class PullRequestEvaluator(
     /// <summary>
     /// Sets the commit status, creates or updates the bot comment, and closes the pull request
     /// when its author is denounced or not vouched for.
+    /// A closed pull request whose author is now allowed to contribute is reopened.
     /// </summary>
     public async Task EvaluateAsync(RepositoryName repository, PullRequest pullRequest, CancellationToken cancellationToken)
     {
@@ -29,13 +31,19 @@ public sealed partial class PullRequestEvaluator(
             case ContributorLevel.Denounced:
                 await UpsertCommentAsync(repository, pullRequest, BotCommentTemplate.Denounced, cancellationToken);
                 await CloseAsync(repository, pullRequest, cancellationToken);
-                break;
+                return;
 
             case ContributorLevel.NotVouched:
                 await UpsertCommentAsync(repository, pullRequest, BotCommentTemplate.NotVouched, cancellationToken);
                 await CloseAsync(repository, pullRequest, cancellationToken);
-                break;
+                return;
+        }
 
+        if (pullRequest.State == IssueStates.Closed && !await TryReopenAsync(repository, pullRequest, cancellationToken))
+            return;
+
+        switch (level)
+        {
             case ContributorLevel.ClaMissing:
                 await UpsertCommentAsync(repository, pullRequest, BotCommentTemplate.ClaRequired, cancellationToken);
                 break;
@@ -166,8 +174,27 @@ public sealed partial class PullRequestEvaluator(
 
     private async Task CloseAsync(RepositoryName repository, PullRequest pullRequest, CancellationToken cancellationToken)
     {
+        if (pullRequest.State == IssueStates.Closed)
+            return;
+
         await github.ClosePullRequestAsync(repository, pullRequest.Number, cancellationToken);
         LogClosed(logger, repository, pullRequest.Number);
+    }
+
+    private async Task<bool> TryReopenAsync(RepositoryName repository, PullRequest pullRequest, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await github.ReopenPullRequestAsync(repository, pullRequest.Number, cancellationToken);
+        }
+        catch (GitHubApiException exception)
+        {
+            LogReopenFailed(logger, repository, pullRequest.Number, exception.Message);
+            return false;
+        }
+
+        LogReopened(logger, repository, pullRequest.Number);
+        return true;
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Pull request {Repository}#{Number} by {Author}: {Level}.")]
@@ -181,4 +208,10 @@ public sealed partial class PullRequestEvaluator(
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Closed {Repository}#{Number}.")]
     private static partial void LogClosed(ILogger logger, RepositoryName repository, int number);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Reopened {Repository}#{Number}.")]
+    private static partial void LogReopened(ILogger logger, RepositoryName repository, int number);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Couldn't reopen {Repository}#{Number}: {Error}")]
+    private static partial void LogReopenFailed(ILogger logger, RepositoryName repository, int number, string error);
 }

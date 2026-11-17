@@ -3,6 +3,7 @@ using Avalonia.ContributionBot.Evaluation;
 using Avalonia.ContributionBot.GitHub;
 using Avalonia.ContributionBot.Storage;
 using Avalonia.ContributionBot.Tests.GitHub;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
 namespace Avalonia.ContributionBot.Tests.Evaluation;
@@ -20,6 +21,7 @@ public sealed class PullRequestEvaluatorTests
     private static readonly RepositoryName s_repository = new("AvaloniaUI", "Avalonia");
 
     private readonly FakeGitHubClient _github = new();
+    private readonly FakeLogger<PullRequestEvaluator> _logger = new();
     private readonly PullRequestEvaluator _evaluator;
 
     public PullRequestEvaluatorTests()
@@ -44,7 +46,7 @@ public sealed class PullRequestEvaluatorTests
             settings.StorePath,
             new FakeLogger<ContributorStore>());
 
-        _evaluator = new PullRequestEvaluator(_github, store, settings, new FakeLogger<PullRequestEvaluator>());
+        _evaluator = new PullRequestEvaluator(_github, store, settings, _logger);
     }
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
@@ -154,6 +156,43 @@ public sealed class PullRequestEvaluatorTests
     }
 
     [Fact]
+    public async Task Reopens_Closed_Pull_Request_Of_Author_Allowed_To_Contribute()
+    {
+        await _evaluator.EvaluateAsync(s_repository, CreatePullRequest(UnsignedId, "unsigned", state: IssueStates.Closed), Token);
+
+        Assert.Equal([Number], _github.ReopenedPullRequests);
+        AssertStatus(CommitState.Failure);
+        AssertSingleComment(BotCommentTemplate.ClaRequired, "unsigned");
+        Assert.Empty(_github.ClosedPullRequests);
+    }
+
+    [Theory]
+    [InlineData(UnknownId, "newcomer", BotCommentTemplate.NotVouched)]
+    [InlineData(DenouncedId, "denounced", BotCommentTemplate.Denounced)]
+    public async Task Leaves_Closed_Pull_Request_Of_Author_Not_Allowed_To_Contribute_Closed(long id, string login, BotCommentTemplate template)
+    {
+        await _evaluator.EvaluateAsync(s_repository, CreatePullRequest(id, login, state: IssueStates.Closed), Token);
+
+        AssertStatus(CommitState.Failure);
+        AssertSingleComment(template, login);
+        Assert.Empty(_github.ReopenedPullRequests);
+        Assert.Empty(_github.ClosedPullRequests);
+    }
+
+    [Fact]
+    public async Task Stops_When_Pull_Request_Cannot_Be_Reopened()
+    {
+        _github.RejectReopen = true;
+
+        await _evaluator.EvaluateAsync(s_repository, CreatePullRequest(UnsignedId, "unsigned", state: IssueStates.Closed), Token);
+
+        AssertStatus(CommitState.Failure);
+        Assert.Empty(_github.GetComments(Number));
+        Assert.Equal(LogLevel.Warning, _logger.LatestRecord.Level);
+        Assert.StartsWith("Couldn't reopen AvaloniaUI/Avalonia#42: ", _logger.LatestRecord.Message);
+    }
+
+    [Fact]
     public async Task Status_Update_Neither_Comments_Nor_Closes()
     {
         await _evaluator.UpdateStatusAsync(s_repository, CreatePullRequest(UnknownId, "newcomer"), Token);
@@ -199,12 +238,17 @@ public sealed class PullRequestEvaluatorTests
         Assert.Equal(BotComment.Render(template, author, s_repository, TestSettings.Default), comment.Body);
     }
 
-    private static PullRequest CreatePullRequest(long authorId, string login, string type = GitHubUserTypes.User)
+    private static PullRequest CreatePullRequest(
+        long authorId,
+        string login,
+        string type = GitHubUserTypes.User,
+        string state = IssueStates.Open)
         => new()
         {
             Number = Number,
             User = new GitHubUser { Login = login, Id = authorId, Type = type },
-            Head = new GitRef { Sha = HeadSha }
+            Head = new GitRef { Sha = HeadSha },
+            State = state
         };
 
     private static Contributor CreateContributor(long id, string login, VouchStatus status, bool signed)

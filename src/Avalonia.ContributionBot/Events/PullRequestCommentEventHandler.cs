@@ -1,3 +1,4 @@
+using Avalonia.ContributionBot.Comments;
 using Avalonia.ContributionBot.Configuration;
 using Avalonia.ContributionBot.Evaluation;
 using Avalonia.ContributionBot.GitHub;
@@ -7,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace Avalonia.ContributionBot.Events;
 
 /// <summary>
-/// Handles <c>issue_comment</c> events carrying a bot command on an open pull request.
+/// Handles <c>issue_comment</c> events carrying a bot command on a pull request.
 /// </summary>
 public sealed partial class PullRequestCommentEventHandler(
     IGitHubClient github,
@@ -37,12 +38,6 @@ public sealed partial class PullRequestCommentEventHandler(
             return;
         }
 
-        if (issue.State != IssueStates.Open)
-        {
-            LogIgnoredPullRequestState(logger, issue.Number, issue.State);
-            return;
-        }
-
         if (comment.User.Type == GitHubUserTypes.Bot)
         {
             LogIgnoredBotComment(logger, comment.Id, comment.User.Login);
@@ -55,13 +50,20 @@ public sealed partial class PullRequestCommentEventHandler(
             return;
         }
 
+        var isRecheck = command.Equals(RecheckCommandName, StringComparison.OrdinalIgnoreCase);
+        if (issue.State != IssueStates.Open && !isRecheck)
+        {
+            LogIgnoredPullRequestState(logger, issue.Number, issue.State);
+            return;
+        }
+
         var repository = payload.Repository.GetName();
         LogCommand(logger, command, comment.User.Login, repository, issue.Number);
 
-        if (command.Equals(AgreeCommandName, StringComparison.OrdinalIgnoreCase))
-            await AgreeAsync(repository, issue, comment, cancellationToken);
-        else if (command.Equals(RecheckCommandName, StringComparison.OrdinalIgnoreCase))
+        if (isRecheck)
             await RecheckAsync(repository, issue, comment, cancellationToken);
+        else if (command.Equals(AgreeCommandName, StringComparison.OrdinalIgnoreCase))
+            await AgreeAsync(repository, issue, comment, cancellationToken);
         else
             LogUnknownCommand(logger, command);
     }
@@ -97,7 +99,31 @@ public sealed partial class PullRequestCommentEventHandler(
             return;
         }
 
-        await EvaluateAsync(repository, issue.Number, cancellationToken);
+        var pullRequest = await github.GetPullRequestAsync(repository, issue.Number, cancellationToken);
+        if (pullRequest.State == IssueStates.Closed && !await IsClosedByBotAsync(repository, pullRequest, cancellationToken))
+            return;
+
+        await evaluator.EvaluateAsync(repository, pullRequest, cancellationToken);
+    }
+
+    private async Task<bool> IsClosedByBotAsync(RepositoryName repository, PullRequest pullRequest, CancellationToken cancellationToken)
+    {
+        if (pullRequest.MergedAt is not null)
+        {
+            LogRecheckOfMergedPullRequest(logger, repository, pullRequest.Number);
+            return false;
+        }
+
+        var botComment = BotComment.Find(await github.GetIssueCommentsAsync(repository, pullRequest.Number, cancellationToken));
+        var closedBy = await github.GetLastClosedByAsync(repository, pullRequest.Number, cancellationToken);
+
+        if (botComment is null || closedBy is null || closedBy.Id != botComment.User.Id)
+        {
+            LogRecheckOfPullRequestNotClosedByBot(logger, repository, pullRequest.Number);
+            return false;
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -155,6 +181,12 @@ public sealed partial class PullRequestCommentEventHandler(
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Ignoring recheck from {Login} on {Repository}#{Number}: only collaborators with write access can request it.")]
     private static partial void LogRecheckFromNonCollaborator(ILogger logger, string login, RepositoryName repository, int number);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Ignoring recheck on {Repository}#{Number}: the pull request is merged.")]
+    private static partial void LogRecheckOfMergedPullRequest(ILogger logger, RepositoryName repository, int number);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Ignoring recheck on {Repository}#{Number}: the pull request is closed, and the bot didn't close it.")]
+    private static partial void LogRecheckOfPullRequestNotClosedByBot(ILogger logger, RepositoryName repository, int number);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "{Login} has already accepted the CLA.")]
     private static partial void LogAlreadySigned(ILogger logger, string login);

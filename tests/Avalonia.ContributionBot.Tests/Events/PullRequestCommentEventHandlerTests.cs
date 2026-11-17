@@ -23,21 +23,15 @@ public sealed class PullRequestCommentEventHandlerTests
     private readonly FakeGitHubClient _github = new();
     private readonly FakeLogger<PullRequestCommentEventHandler> _logger = new();
 
+    private static readonly GitHubUser s_maintainer = new()
+    {
+        Login = "maintainer",
+        Id = 5005,
+        Type = GitHubUserTypes.User
+    };
+
     public PullRequestCommentEventHandlerTests()
-        => _github.PullRequests[Number] = new PullRequest
-        {
-            Number = Number,
-            User = new GitHubUser
-            {
-                Login = AuthorLogin,
-                Id = AuthorId,
-                Type = GitHubUserTypes.User
-            },
-            Head = new GitRef
-            {
-                Sha = HeadSha
-            }
-        };
+        => SetPullRequest(IssueStates.Open);
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
@@ -145,6 +139,70 @@ public sealed class PullRequestCommentEventHandlerTests
     }
 
     [Fact]
+    public async Task Recheck_Reopens_Pull_Request_Closed_By_Bot()
+    {
+        SetAuthor(VouchStatus.Vouched, signed: false);
+        CloseByBot();
+
+        await HandleAsync(Recheck(IssueStates.Closed));
+
+        Assert.Equal([Number], _github.ReopenedPullRequests);
+        Assert.Empty(_github.ClosedPullRequests);
+        AssertStatus(CommitState.Failure);
+        Assert.Equal(RenderComment(BotCommentTemplate.ClaRequired), Assert.Single(_github.GetComments(Number)).Body);
+    }
+
+    [Fact]
+    public async Task Recheck_Keeps_Pull_Request_Closed_By_Bot_When_Author_Is_Still_Not_Vouched_For()
+    {
+        SetAuthor(status: null, signed: false);
+        CloseByBot();
+
+        await HandleAsync(Recheck(IssueStates.Closed));
+
+        Assert.Empty(_github.ReopenedPullRequests);
+        Assert.Empty(_github.ClosedPullRequests);
+        Assert.Empty(_github.UpdatedCommentIds);
+        AssertStatus(CommitState.Failure);
+    }
+
+    [Fact]
+    public async Task Recheck_Ignores_Pull_Request_Closed_By_Someone_Else()
+    {
+        SetAuthor(VouchStatus.Vouched, signed: false);
+        CloseByBot();
+        _github.ClosedBy[Number] = s_maintainer;
+
+        await HandleAsync(Recheck(IssueStates.Closed));
+
+        AssertIgnoredClosedPullRequest("the pull request is closed, and the bot didn't close it.");
+    }
+
+    [Fact]
+    public async Task Recheck_Ignores_Closed_Pull_Request_Without_Bot_Comment()
+    {
+        SetAuthor(VouchStatus.Vouched, signed: false);
+        SetPullRequest(IssueStates.Closed);
+        _github.ClosedBy[Number] = FakeGitHubClient.BotUser;
+
+        await HandleAsync(Recheck(IssueStates.Closed));
+
+        AssertIgnoredClosedPullRequest("the pull request is closed, and the bot didn't close it.");
+    }
+
+    [Fact]
+    public async Task Recheck_Ignores_Merged_Pull_Request()
+    {
+        SetAuthor(VouchStatus.Vouched, signed: false);
+        CloseByBot();
+        SetPullRequest(IssueStates.Closed, mergedAt: s_commentDate);
+
+        await HandleAsync(Recheck(IssueStates.Closed));
+
+        AssertIgnoredClosedPullRequest("the pull request is merged.");
+    }
+
+    [Fact]
     public async Task Ignores_Unknown_Command()
     {
         SetAuthor(VouchStatus.Vouched, signed: false);
@@ -190,6 +248,49 @@ public sealed class PullRequestCommentEventHandlerTests
 
     private static string Agree(string body = "!contribution-bot agree")
         => SamplePayloads.IssueComment(body, commenterLogin: AuthorLogin, commenterId: AuthorId);
+
+    private string Recheck(string state)
+    {
+        _github.Permissions[s_maintainer.Login] = CollaboratorPermissions.Write;
+        return SamplePayloads.IssueComment(
+            "!contribution-bot recheck",
+            state: state,
+            commenterLogin: s_maintainer.Login,
+            commenterId: s_maintainer.Id);
+    }
+
+    private void SetPullRequest(string state, DateTimeOffset? mergedAt = null)
+        => _github.PullRequests[Number] = new PullRequest
+        {
+            Number = Number,
+            User = new GitHubUser
+            {
+                Login = AuthorLogin,
+                Id = AuthorId,
+                Type = GitHubUserTypes.User
+            },
+            Head = new GitRef
+            {
+                Sha = HeadSha
+            },
+            State = state,
+            MergedAt = mergedAt
+        };
+
+    private void CloseByBot()
+    {
+        SetPullRequest(IssueStates.Closed);
+        _github.AddComment(Number, RenderComment(BotCommentTemplate.NotVouched), FakeGitHubClient.BotUser);
+        _github.ClosedBy[Number] = FakeGitHubClient.BotUser;
+    }
+
+    private void AssertIgnoredClosedPullRequest(string reason)
+    {
+        Assert.Empty(_github.ReopenedPullRequests);
+        Assert.Empty(_github.Statuses);
+        Assert.Empty(_github.UpdatedCommentIds);
+        Assert.Equal($"Ignoring recheck on AvaloniaUI/Avalonia#42: {reason}", _logger.LatestRecord.Message);
+    }
 
     private static string RenderComment(BotCommentTemplate template)
         => BotComment.Render(template, AuthorLogin, s_repository, TestSettings.Default);

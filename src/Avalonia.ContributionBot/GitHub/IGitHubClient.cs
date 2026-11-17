@@ -22,7 +22,11 @@ public interface IGitHubClient
 
     Task<IssueComment> UpdateIssueCommentAsync(RepositoryName repository, long commentId, string body, CancellationToken cancellationToken);
 
+    Task<GitHubUser?> GetLastClosedByAsync(RepositoryName repository, int number, CancellationToken cancellationToken);
+
     Task ClosePullRequestAsync(RepositoryName repository, int number, CancellationToken cancellationToken);
+
+    Task ReopenPullRequestAsync(RepositoryName repository, int number, CancellationToken cancellationToken);
 
     Task CreateCommitStatusAsync(RepositoryName repository, string sha, CommitStatus status, CancellationToken cancellationToken);
 

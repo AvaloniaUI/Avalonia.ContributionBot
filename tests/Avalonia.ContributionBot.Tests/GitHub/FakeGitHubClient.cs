@@ -33,6 +33,14 @@ internal sealed class FakeGitHubClient : IGitHubClient
 
     public List<int> ClosedPullRequests { get; } = [];
 
+    public List<int> ReopenedPullRequests { get; } = [];
+
+    /// <summary>Whether reopening fails with 422, like GitHub does when the head branch has been deleted.</summary>
+    public bool RejectReopen { get; set; }
+
+    /// <summary>The account that last closed each pull request, by number.</summary>
+    public Dictionary<int, GitHubUser> ClosedBy { get; } = [];
+
     public Dictionary<int, PullRequest> PullRequests { get; } = [];
 
     /// <summary>The users returned by <see cref="GetUserAsync"/>, by login.</summary>
@@ -136,9 +144,21 @@ internal sealed class FakeGitHubClient : IGitHubClient
         throw new GitHubApiException(HttpStatusCode.NotFound, $"PATCH comment {commentId}", "Not Found");
     }
 
+    public Task<GitHubUser?> GetLastClosedByAsync(RepositoryName repository, int number, CancellationToken cancellationToken)
+        => Task.FromResult(ClosedBy.GetValueOrDefault(number));
+
     public Task ClosePullRequestAsync(RepositoryName repository, int number, CancellationToken cancellationToken)
     {
         ClosedPullRequests.Add(number);
+        return Task.CompletedTask;
+    }
+
+    public Task ReopenPullRequestAsync(RepositoryName repository, int number, CancellationToken cancellationToken)
+    {
+        if (RejectReopen)
+            throw new GitHubApiException(HttpStatusCode.UnprocessableEntity, $"PATCH pull request {number}", "state cannot be changed");
+
+        ReopenedPullRequests.Add(number);
         return Task.CompletedTask;
     }
 

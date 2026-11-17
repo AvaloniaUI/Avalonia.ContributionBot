@@ -25,6 +25,11 @@ public sealed class GitHubClientTests
         }
         """;
 
+    private static string EventJson(string eventType, string login, long id)
+        => $$"""
+           { "event": "{{eventType}}", "actor": { "login": "{{login}}", "id": {{id}}, "type": "User" }, "created_at": "2026-11-16T10:00:00Z" }
+           """;
+
     private static string CommentJson(long id, string body)
         => $$"""
            {
@@ -340,6 +345,57 @@ public sealed class GitHubClientTests
         await CreateClient(handler).ClosePullRequestAsync(s_repository, 42, Token);
 
         Assert.Equal(IssueStates.Closed, Assert.Single(handler.Requests).GetJsonBody().GetProperty("state").GetString());
+    }
+
+    [Fact]
+    public async Task Reopens_Pull_Request()
+    {
+        var handler = new FakeHttpHandler()
+            .On(
+                HttpMethod.Patch,
+                "/repos/AvaloniaUI/Avalonia/pulls/42",
+                HttpStatusCode.OK,
+                PullRequestJson);
+
+        await CreateClient(handler).ReopenPullRequestAsync(s_repository, 42, Token);
+
+        Assert.Equal(IssueStates.Open, Assert.Single(handler.Requests).GetJsonBody().GetProperty("state").GetString());
+    }
+
+    [Fact]
+    public async Task Gets_Account_That_Last_Closed_Pull_Request()
+    {
+        var handler = new FakeHttpHandler()
+            .On(
+                HttpMethod.Get,
+                "/repos/AvaloniaUI/Avalonia/issues/42/events?per_page=100",
+                HttpStatusCode.OK,
+                $"[{EventJson("closed", "first-closer", 1)}, {EventJson("reopened", "reopener", 2)}]",
+                r => r.Headers.Add("Link", "<https://api.github.com/repositories/1/issues/42/events?per_page=100&page=2>; rel=\"next\""))
+            .On(
+                HttpMethod.Get,
+                "/repositories/1/issues/42/events?per_page=100&page=2",
+                HttpStatusCode.OK,
+                $"[{EventJson("closed", "last-closer", 3)}, {EventJson("labeled", "labeler", 4)}]");
+
+        var closedBy = await CreateClient(handler).GetLastClosedByAsync(s_repository, 42, Token);
+
+        Assert.NotNull(closedBy);
+        Assert.Equal("last-closer", closedBy.Login);
+        Assert.Equal(3, closedBy.Id);
+    }
+
+    [Fact]
+    public async Task Gets_No_Closing_Account_For_Pull_Request_Never_Closed()
+    {
+        var handler = new FakeHttpHandler()
+            .On(
+                HttpMethod.Get,
+                "/repos/AvaloniaUI/Avalonia/issues/42/events?per_page=100",
+                HttpStatusCode.OK,
+                $"[{EventJson("labeled", "labeler", 4)}]");
+
+        Assert.Null(await CreateClient(handler).GetLastClosedByAsync(s_repository, 42, Token));
     }
 
     [Theory]

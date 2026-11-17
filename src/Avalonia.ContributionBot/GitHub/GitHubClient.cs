@@ -51,21 +51,26 @@ public sealed class GitHubClient(HttpClient http) : IGitHubClient
             cancellationToken);
 
     public async Task<IReadOnlyList<IssueComment>> GetIssueCommentsAsync(RepositoryName repository, int number, CancellationToken cancellationToken)
+        => await GetAllPagesAsync(
+            $"{RepositoryPath(repository)}/issues/{number}/comments?per_page={PageSize}",
+            GitHubRestJsonContext.Default.ListIssueComment,
+            cancellationToken);
+
+    public async Task<GitHubUser?> GetLastClosedByAsync(RepositoryName repository, int number, CancellationToken cancellationToken)
     {
-        var comments = new List<IssueComment>();
-        var url = $"{RepositoryPath(repository)}/issues/{number}/comments?per_page={PageSize}";
+        // Events are listed oldest first.
+        var events = await GetAllPagesAsync(
+            $"{RepositoryPath(repository)}/issues/{number}/events?per_page={PageSize}",
+            GitHubRestJsonContext.Default.ListIssueEvent,
+            cancellationToken);
 
-        while (url is not null)
+        for (var i = events.Count - 1; i >= 0; i--)
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get, url);
-            using var response = await SendAsync(request, cancellationToken);
-
-            var page = await ReadAsync(response, GitHubRestJsonContext.Default.ListIssueComment, cancellationToken);
-            comments.AddRange(page);
-            url = GetNextPageUrl(response);
+            if (events[i].Event == IssueEventTypes.Closed)
+                return events[i].Actor;
         }
 
-        return comments;
+        return null;
     }
 
     public async Task<RepositoryFile?> GetFileAsync(RepositoryName repository, string path, string branch, CancellationToken cancellationToken)
@@ -118,10 +123,16 @@ public sealed class GitHubClient(HttpClient http) : IGitHubClient
             cancellationToken);
 
     public Task ClosePullRequestAsync(RepositoryName repository, int number, CancellationToken cancellationToken)
+        => SetPullRequestStateAsync(repository, number, IssueStates.Closed, cancellationToken);
+
+    public Task ReopenPullRequestAsync(RepositoryName repository, int number, CancellationToken cancellationToken)
+        => SetPullRequestStateAsync(repository, number, IssueStates.Open, cancellationToken);
+
+    private Task<PullRequest> SetPullRequestStateAsync(RepositoryName repository, int number, string state, CancellationToken cancellationToken)
         => SendJsonAsync(
             HttpMethod.Patch,
             $"{RepositoryPath(repository)}/pulls/{number}",
-            new UpdatePullRequestRequest { State = IssueStates.Closed },
+            new UpdatePullRequestRequest { State = state },
             GitHubRestJsonContext.Default.UpdatePullRequestRequest,
             GitHubRestJsonContext.Default.PullRequest,
             cancellationToken);
@@ -256,6 +267,26 @@ public sealed class GitHubClient(HttpClient http) : IGitHubClient
 
         return result.Data
             ?? throw new GitHubApiException(response.StatusCode, Describe(request), "The response contains no data.");
+    }
+
+    /// <summary>
+    /// Gets <paramref name="url"/> and every following page given by the <c>Link</c> header, and concatenates their items.
+    /// </summary>
+    private async Task<List<T>> GetAllPagesAsync<T>(string url, JsonTypeInfo<List<T>> pageType, CancellationToken cancellationToken)
+    {
+        var items = new List<T>();
+        var nextUrl = url;
+
+        while (nextUrl is not null)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, nextUrl);
+            using var response = await SendAsync(request, cancellationToken);
+
+            items.AddRange(await ReadAsync(response, pageType, cancellationToken));
+            nextUrl = GetNextPageUrl(response);
+        }
+
+        return items;
     }
 
     private async Task<T> GetAsync<T>(string url, JsonTypeInfo<T> responseType, CancellationToken cancellationToken)

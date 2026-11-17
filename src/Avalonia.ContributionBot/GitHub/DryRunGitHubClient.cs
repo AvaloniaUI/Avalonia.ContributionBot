@@ -26,6 +26,9 @@ public sealed partial class DryRunGitHubClient(IGitHubClient inner, ILogger<DryR
     public Task<IReadOnlyList<IssueComment>> GetIssueCommentsAsync(RepositoryName repository, int number, CancellationToken cancellationToken)
         => inner.GetIssueCommentsAsync(repository, number, cancellationToken);
 
+    public Task<GitHubUser?> GetLastClosedByAsync(RepositoryName repository, int number, CancellationToken cancellationToken)
+        => inner.GetLastClosedByAsync(repository, number, cancellationToken);
+
     public Task<RepositoryFile?> GetFileAsync(RepositoryName repository, string path, string branch, CancellationToken cancellationToken)
         => inner.GetFileAsync(repository, path, branch, cancellationToken);
 
@@ -44,6 +47,12 @@ public sealed partial class DryRunGitHubClient(IGitHubClient inner, ILogger<DryR
     public Task ClosePullRequestAsync(RepositoryName repository, int number, CancellationToken cancellationToken)
     {
         LogClosePullRequest(logger, repository, number);
+        return Task.CompletedTask;
+    }
+
+    public Task ReopenPullRequestAsync(RepositoryName repository, int number, CancellationToken cancellationToken)
+    {
+        LogReopenPullRequest(logger, repository, number);
         return Task.CompletedTask;
     }
 
@@ -93,6 +102,9 @@ public sealed partial class DryRunGitHubClient(IGitHubClient inner, ILogger<DryR
 
     [LoggerMessage(Level = LogLevel.Information, Message = "[dry-run] Would close pull request {Repository}#{Number}.")]
     private static partial void LogClosePullRequest(ILogger logger, RepositoryName repository, int number);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "[dry-run] Would reopen pull request {Repository}#{Number}.")]
+    private static partial void LogReopenPullRequest(ILogger logger, RepositoryName repository, int number);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "[dry-run] Would set status '{Context}' on {Repository}@{Sha} to {State}: {Description}")]
     private static partial void LogCommitStatus(ILogger logger, string context, RepositoryName repository, string sha, CommitState state, string description);

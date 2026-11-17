@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Build
+        run: dotnet build --configuration Release
+
+      - name: Test
+        run: dotnet test --configuration Release --no-build
+
+      - name: Publish (Native AOT, linux-x64)
+        run: dotnet publish src/Avalonia.ContributionBot --configuration Release --runtime linux-x64
+
+      - name: Smoke test
+        run: ./artifacts/publish/Avalonia.ContributionBot/release_linux-x64/Avalonia.ContributionBot --help

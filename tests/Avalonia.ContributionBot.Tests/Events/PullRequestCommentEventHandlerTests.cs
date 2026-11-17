@@ -206,7 +206,7 @@ public sealed class PullRequestCommentEventHandlerTests
 
         var evaluator = new PullRequestEvaluator(_github, store, settings, new FakeLogger<PullRequestEvaluator>());
         var handler = new PullRequestCommentEventHandler(_github, store, evaluator, settings, _logger);
-        var payload = Assert.IsType<IssueCommentEvent>(JsonSerializer.Deserialize(json, typeof(IssueCommentEvent), GitHubJsonContext.Default));
+        var payload = Assert.IsType<IssueCommentEvent>(JsonSerializer.Deserialize(json, typeof(IssueCommentEvent), GitHubRestJsonContext.Default));
 
         await handler.HandleAsync(payload, Token);
     }

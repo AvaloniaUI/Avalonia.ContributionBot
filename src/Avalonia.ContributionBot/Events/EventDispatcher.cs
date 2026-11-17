@@ -20,17 +20,17 @@ public sealed partial class EventDispatcher(
         switch (eventName)
         {
             case GitHubEventNames.PullRequestTarget:
-                var pullRequestEvent = await DeserializeAsync(payload, GitHubJsonContext.Default.PullRequestEvent, cancellationToken);
+                var pullRequestEvent = await DeserializeAsync(payload, GitHubRestJsonContext.Default.PullRequestEvent, cancellationToken);
                 await pullRequestHandler.HandleAsync(pullRequestEvent, cancellationToken);
                 break;
 
             case GitHubEventNames.IssueComment:
-                var issueCommentEvent = await DeserializeAsync(payload, GitHubJsonContext.Default.IssueCommentEvent, cancellationToken);
+                var issueCommentEvent = await DeserializeAsync(payload, GitHubRestJsonContext.Default.IssueCommentEvent, cancellationToken);
                 await issueCommentHandler.HandleAsync(issueCommentEvent, cancellationToken);
                 break;
 
             case GitHubEventNames.DiscussionComment:
-                var discussionCommentEvent = await DeserializeAsync(payload, GitHubJsonContext.Default.DiscussionCommentEvent, cancellationToken);
+                var discussionCommentEvent = await DeserializeAsync(payload, GitHubRestJsonContext.Default.DiscussionCommentEvent, cancellationToken);
                 await discussionCommentHandler.HandleAsync(discussionCommentEvent, cancellationToken);
                 break;
 

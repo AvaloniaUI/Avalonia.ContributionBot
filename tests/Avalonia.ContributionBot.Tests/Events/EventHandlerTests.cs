@@ -14,7 +14,7 @@ public sealed class EventHandlerTests
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
     private static T Parse<T>(string json)
-        => Assert.IsType<T>(JsonSerializer.Deserialize(json, typeof(T), GitHubJsonContext.Default));
+        => Assert.IsType<T>(JsonSerializer.Deserialize(json, typeof(T), GitHubRestJsonContext.Default));
 
     private static string GetSingleInformation<T>(FakeLogger<T> logger)
     {

@@ -263,7 +263,7 @@ public sealed class DiscussionCommentEventHandlerTests
 
         var handler = new DiscussionCommentEventHandler(_github, store, settings, _logger);
         var payload = Assert.IsType<DiscussionCommentEvent>(
-            JsonSerializer.Deserialize(json, typeof(DiscussionCommentEvent), GitHubJsonContext.Default));
+            JsonSerializer.Deserialize(json, typeof(DiscussionCommentEvent), GitHubRestJsonContext.Default));
 
         await handler.HandleAsync(payload, Token);
     }

@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Avalonia.ContributionBot.Events;
 
 namespace Avalonia.ContributionBot.GitHub;
 
@@ -195,80 +196,23 @@ internal sealed class ErrorResponse
     public string? Message { get; init; }
 }
 
-internal sealed class GraphQLRequest<TVariables>
-{
-    [JsonPropertyName("query")]
-    public required string Query { get; init; }
-
-    [JsonPropertyName("variables")]
-    public required TVariables Variables { get; init; }
-}
-
-internal sealed class GraphQLResponse<TData>
-{
-    [JsonPropertyName("data")]
-    public TData? Data { get; init; }
-
-    [JsonPropertyName("errors")]
-    public List<GraphQLError>? Errors { get; init; }
-}
-
-internal sealed class GraphQLError
-{
-    [JsonPropertyName("message")]
-    public required string Message { get; init; }
-}
-
-internal sealed class AddDiscussionCommentVariables
-{
-    [JsonPropertyName("discussionId")]
-    public required string DiscussionId { get; init; }
-
-    [JsonPropertyName("replyToId")]
-    public string? ReplyToId { get; init; }
-
-    [JsonPropertyName("body")]
-    public required string Body { get; init; }
-}
-
-internal sealed class AddDiscussionCommentData
-{
-    [JsonPropertyName("addDiscussionComment")]
-    public required AddDiscussionCommentPayload AddDiscussionComment { get; init; }
-}
-
-internal sealed class AddDiscussionCommentPayload
-{
-    [JsonPropertyName("comment")]
-    public required DiscussionCommentNode Comment { get; init; }
-}
-
-internal sealed class DiscussionCommentNode
-{
-    [JsonPropertyName("url")]
-    public required string Url { get; init; }
-}
-
-internal sealed class NodeVariables
-{
-    [JsonPropertyName("id")]
-    public required string Id { get; init; }
-}
-
-internal sealed class DiscussionCommentNodeData
-{
-    [JsonPropertyName("node")]
-    public DiscussionCommentReplyNode? Node { get; init; }
-}
-
-internal sealed class DiscussionCommentReplyNode
-{
-    [JsonPropertyName("replyTo")]
-    public NodeReference? ReplyTo { get; init; }
-}
-
-internal sealed class NodeReference
-{
-    [JsonPropertyName("id")]
-    public required string Id { get; init; }
-}
+[JsonSourceGenerationOptions(
+    PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+[JsonSerializable(typeof(BlobResponse))]
+[JsonSerializable(typeof(CollaboratorPermission))]
+[JsonSerializable(typeof(CommentRequest))]
+[JsonSerializable(typeof(CommitStatusRequest))]
+[JsonSerializable(typeof(ContentResponse))]
+[JsonSerializable(typeof(DiscussionCommentEvent))]
+[JsonSerializable(typeof(ErrorResponse))]
+[JsonSerializable(typeof(GitHubUser))]
+[JsonSerializable(typeof(IssueComment))]
+[JsonSerializable(typeof(IssueCommentEvent))]
+[JsonSerializable(typeof(List<IssueComment>))]
+[JsonSerializable(typeof(PullRequest))]
+[JsonSerializable(typeof(PullRequestEvent))]
+[JsonSerializable(typeof(PutContentRequest))]
+[JsonSerializable(typeof(PutContentResponse))]
+[JsonSerializable(typeof(UpdatePullRequestRequest))]
+internal sealed partial class GitHubRestJsonContext : JsonSerializerContext;

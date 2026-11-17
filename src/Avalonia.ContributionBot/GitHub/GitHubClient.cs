@@ -30,7 +30,7 @@ public sealed class GitHubClient(HttpClient http) : IGitHubClient
     public Task<PullRequest> GetPullRequestAsync(RepositoryName repository, int number, CancellationToken cancellationToken)
         => GetAsync(
             $"{RepositoryPath(repository)}/pulls/{number}",
-            GitHubJsonContext.Default.PullRequest,
+            GitHubRestJsonContext.Default.PullRequest,
             cancellationToken);
 
     public async Task<GitHubUser?> GetUserAsync(string login, CancellationToken cancellationToken)
@@ -41,13 +41,13 @@ public sealed class GitHubClient(HttpClient http) : IGitHubClient
             return null;
 
         await EnsureSuccessAsync(request, response, cancellationToken);
-        return await ReadAsync(response, GitHubJsonContext.Default.GitHubUser, cancellationToken);
+        return await ReadAsync(response, GitHubRestJsonContext.Default.GitHubUser, cancellationToken);
     }
 
     public Task<CollaboratorPermission> GetCollaboratorPermissionAsync(RepositoryName repository, string login, CancellationToken cancellationToken)
         => GetAsync(
             $"{RepositoryPath(repository)}/collaborators/{Uri.EscapeDataString(login)}/permission",
-            GitHubJsonContext.Default.CollaboratorPermission,
+            GitHubRestJsonContext.Default.CollaboratorPermission,
             cancellationToken);
 
     public async Task<IReadOnlyList<IssueComment>> GetIssueCommentsAsync(RepositoryName repository, int number, CancellationToken cancellationToken)
@@ -60,7 +60,7 @@ public sealed class GitHubClient(HttpClient http) : IGitHubClient
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
             using var response = await SendAsync(request, cancellationToken);
 
-            var page = await ReadAsync(response, GitHubJsonContext.Default.ListIssueComment, cancellationToken);
+            var page = await ReadAsync(response, GitHubRestJsonContext.Default.ListIssueComment, cancellationToken);
             comments.AddRange(page);
             url = GetNextPageUrl(response);
         }
@@ -80,7 +80,7 @@ public sealed class GitHubClient(HttpClient http) : IGitHubClient
 
         await EnsureSuccessAsync(request, response, cancellationToken);
 
-        var content = await ReadAsync(response, GitHubJsonContext.Default.ContentResponse, cancellationToken);
+        var content = await ReadAsync(response, GitHubRestJsonContext.Default.ContentResponse, cancellationToken);
         if (content.Type != ContentTypes.File)
             throw new InvalidOperationException($"'{path}' in {repository}@{branch} is a {content.Type}, not a file.");
 
@@ -90,7 +90,7 @@ public sealed class GitHubClient(HttpClient http) : IGitHubClient
 
         var blob = await GetAsync(
             $"{RepositoryPath(repository)}/git/blobs/{content.Sha}",
-            GitHubJsonContext.Default.BlobResponse,
+            GitHubRestJsonContext.Default.BlobResponse,
             cancellationToken);
 
         if (blob.Encoding != ContentEncodings.Base64)
@@ -104,8 +104,8 @@ public sealed class GitHubClient(HttpClient http) : IGitHubClient
             HttpMethod.Post,
             $"{RepositoryPath(repository)}/issues/{number}/comments",
             new CommentRequest { Body = body },
-            GitHubJsonContext.Default.CommentRequest,
-            GitHubJsonContext.Default.IssueComment,
+            GitHubRestJsonContext.Default.CommentRequest,
+            GitHubRestJsonContext.Default.IssueComment,
             cancellationToken);
 
     public Task<IssueComment> UpdateIssueCommentAsync(RepositoryName repository, long commentId, string body, CancellationToken cancellationToken)
@@ -113,8 +113,8 @@ public sealed class GitHubClient(HttpClient http) : IGitHubClient
             HttpMethod.Patch,
             $"{RepositoryPath(repository)}/issues/comments/{commentId}",
             new CommentRequest { Body = body },
-            GitHubJsonContext.Default.CommentRequest,
-            GitHubJsonContext.Default.IssueComment,
+            GitHubRestJsonContext.Default.CommentRequest,
+            GitHubRestJsonContext.Default.IssueComment,
             cancellationToken);
 
     public Task ClosePullRequestAsync(RepositoryName repository, int number, CancellationToken cancellationToken)
@@ -122,8 +122,8 @@ public sealed class GitHubClient(HttpClient http) : IGitHubClient
             HttpMethod.Patch,
             $"{RepositoryPath(repository)}/pulls/{number}",
             new UpdatePullRequestRequest { State = IssueStates.Closed },
-            GitHubJsonContext.Default.UpdatePullRequestRequest,
-            GitHubJsonContext.Default.PullRequest,
+            GitHubRestJsonContext.Default.UpdatePullRequestRequest,
+            GitHubRestJsonContext.Default.PullRequest,
             cancellationToken);
 
     public async Task CreateCommitStatusAsync(RepositoryName repository, string sha, CommitStatus status, CancellationToken cancellationToken)
@@ -142,7 +142,7 @@ public sealed class GitHubClient(HttpClient http) : IGitHubClient
 
         using var request = new HttpRequestMessage(HttpMethod.Post, $"{RepositoryPath(repository)}/statuses/{sha}")
         {
-            Content = JsonContent.Create(body, GitHubJsonContext.Default.CommitStatusRequest)
+            Content = JsonContent.Create(body, GitHubRestJsonContext.Default.CommitStatusRequest)
         };
 
         using var response = await SendAsync(request, cancellationToken);
@@ -167,7 +167,7 @@ public sealed class GitHubClient(HttpClient http) : IGitHubClient
 
         using var request = new HttpRequestMessage(HttpMethod.Put, $"{RepositoryPath(repository)}/contents/{EscapePath(path)}")
         {
-            Content = JsonContent.Create(body, GitHubJsonContext.Default.PutContentRequest)
+            Content = JsonContent.Create(body, GitHubRestJsonContext.Default.PutContentRequest)
         };
 
         using var response = await http.SendAsync(request, cancellationToken);
@@ -183,7 +183,7 @@ public sealed class GitHubClient(HttpClient http) : IGitHubClient
 
         await EnsureSuccessAsync(request, response, cancellationToken);
 
-        var result = await ReadAsync(response, GitHubJsonContext.Default.PutContentResponse, cancellationToken);
+        var result = await ReadAsync(response, GitHubRestJsonContext.Default.PutContentResponse, cancellationToken);
         return result.Content.Sha;
     }
 
@@ -198,8 +198,8 @@ public sealed class GitHubClient(HttpClient http) : IGitHubClient
             }
             """,
             new NodeVariables { Id = commentNodeId },
-            GitHubJsonContext.Default.GraphQLRequestNodeVariables,
-            GitHubJsonContext.Default.GraphQLResponseDiscussionCommentNodeData,
+            GitHubGraphQLJsonContext.Default.GraphQLRequestNodeVariables,
+            GitHubGraphQLJsonContext.Default.GraphQLResponseDiscussionCommentNodeData,
             cancellationToken);
 
         return data.Node?.ReplyTo?.Id;
@@ -221,8 +221,8 @@ public sealed class GitHubClient(HttpClient http) : IGitHubClient
                 ReplyToId = replyToNodeId,
                 Body = body
             },
-            GitHubJsonContext.Default.GraphQLRequestAddDiscussionCommentVariables,
-            GitHubJsonContext.Default.GraphQLResponseAddDiscussionCommentData,
+            GitHubGraphQLJsonContext.Default.GraphQLRequestAddDiscussionCommentVariables,
+            GitHubGraphQLJsonContext.Default.GraphQLResponseAddDiscussionCommentData,
             cancellationToken);
 
         return new Uri(data.AddDiscussionComment.Comment.Url, UriKind.Absolute);
@@ -313,7 +313,7 @@ public sealed class GitHubClient(HttpClient http) : IGitHubClient
 
         try
         {
-            return JsonSerializer.Deserialize(text, GitHubJsonContext.Default.ErrorResponse)?.Message ?? text;
+            return JsonSerializer.Deserialize(text, GitHubRestJsonContext.Default.ErrorResponse)?.Message ?? text;
         }
         catch (JsonException)
         {

@@ -7,7 +7,12 @@ namespace Avalonia.ContributionBot.GitHub;
 /// </summary>
 public sealed partial class DryRunGitHubClient(IGitHubClient inner, ILogger<DryRunGitHubClient> logger) : IGitHubClient
 {
-    private static readonly GitHubUser s_dryRunUser = new() { Login = "dry-run", Id = 0, Type = "Bot" };
+    private static readonly GitHubUser s_dryRunUser = new()
+    {
+        Login = "dry-run",
+        Id = 0,
+        Type = GitHubUserTypes.Bot
+    };
 
     public Task<PullRequest> GetPullRequestAsync(RepositoryName repository, int number, CancellationToken cancellationToken)
         => inner.GetPullRequestAsync(repository, number, cancellationToken);

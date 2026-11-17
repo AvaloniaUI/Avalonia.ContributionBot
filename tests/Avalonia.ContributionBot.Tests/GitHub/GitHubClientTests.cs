@@ -52,7 +52,7 @@ public sealed class GitHubClientTests
         Assert.Equal(42, pullRequest.Number);
         Assert.Equal("contributor", pullRequest.User.Login);
         Assert.Equal(1001, pullRequest.User.Id);
-        Assert.Equal("User", pullRequest.User.Type);
+        Assert.Equal(GitHubUserTypes.User, pullRequest.User.Type);
         Assert.Equal("abc123", pullRequest.Head.Sha);
 
         var request = Assert.Single(handler.Requests);
@@ -98,10 +98,10 @@ public sealed class GitHubClientTests
     }
 
     [Theory]
-    [InlineData("admin")]
-    [InlineData("write")]
-    [InlineData("read")]
-    [InlineData("none")]
+    [InlineData(CollaboratorPermissions.Admin)]
+    [InlineData(CollaboratorPermissions.Write)]
+    [InlineData(CollaboratorPermissions.Read)]
+    [InlineData(CollaboratorPermissions.None)]
     public async Task Parses_Collaborator_Permission(string permission)
     {
         var handler = new FakeHttpHandler()

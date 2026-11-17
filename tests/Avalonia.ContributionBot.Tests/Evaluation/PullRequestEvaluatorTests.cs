@@ -52,7 +52,7 @@ public sealed class PullRequestEvaluatorTests
     [Fact]
     public async Task Exempts_Bots()
     {
-        await _evaluator.EvaluateAsync(s_repository, CreatePullRequest(UnknownId, "dependabot[bot]", "Bot"), Token);
+        await _evaluator.EvaluateAsync(s_repository, CreatePullRequest(UnknownId, "dependabot[bot]", GitHubUserTypes.Bot), Token);
 
         AssertStatus(CommitState.Success);
         Assert.Empty(_github.GetComments(Number));
@@ -60,8 +60,8 @@ public sealed class PullRequestEvaluatorTests
     }
 
     [Theory]
-    [InlineData("write")]
-    [InlineData("admin")]
+    [InlineData(CollaboratorPermissions.Write)]
+    [InlineData(CollaboratorPermissions.Admin)]
     public async Task Exempts_Collaborators(string permission)
     {
         _github.Permissions["maintainer"] = permission;
@@ -142,7 +142,7 @@ public sealed class PullRequestEvaluatorTests
     [Fact]
     public async Task Ignores_Marker_Copied_By_A_User()
     {
-        var user = new GitHubUser { Login = "unsigned", Id = UnsignedId, Type = "User" };
+        var user = new GitHubUser { Login = "unsigned", Id = UnsignedId, Type = GitHubUserTypes.User };
         var copied = _github.AddComment(Number, $"{BotComment.Marker}\nCopied", user);
 
         await _evaluator.EvaluateAsync(s_repository, CreatePullRequest(UnsignedId, "unsigned"), Token);
@@ -197,7 +197,7 @@ public sealed class PullRequestEvaluatorTests
         Assert.Equal(BotComment.Render(template, author, s_repository, TestSettings.Default), comment.Body);
     }
 
-    private static PullRequest CreatePullRequest(long authorId, string login, string type = "User")
+    private static PullRequest CreatePullRequest(long authorId, string login, string type = GitHubUserTypes.User)
         => new()
         {
             Number = Number,

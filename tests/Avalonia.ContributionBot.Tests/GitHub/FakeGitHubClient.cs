@@ -9,7 +9,12 @@ namespace Avalonia.ContributionBot.Tests.GitHub;
 /// </summary>
 internal sealed class FakeGitHubClient : IGitHubClient
 {
-    public static readonly GitHubUser BotUser = new() { Login = "avalonia-bot[bot]", Id = 9000, Type = "Bot" };
+    public static readonly GitHubUser BotUser = new()
+    {
+        Login = "avalonia-bot[bot]",
+        Id = 9000,
+        Type = GitHubUserTypes.Bot
+    };
 
     private readonly Dictionary<string, RepositoryFile> _files = [];
     private readonly Dictionary<int, List<IssueComment>> _comments = [];
@@ -80,7 +85,7 @@ internal sealed class FakeGitHubClient : IGitHubClient
     }
 
     public Task<CollaboratorPermission> GetCollaboratorPermissionAsync(RepositoryName repository, string login, CancellationToken cancellationToken)
-        => Task.FromResult(new CollaboratorPermission { Permission = Permissions.GetValueOrDefault(login, "read") });
+        => Task.FromResult(new CollaboratorPermission { Permission = Permissions.GetValueOrDefault(login, CollaboratorPermissions.Read) });
 
     public Task<IReadOnlyList<IssueComment>> GetIssueCommentsAsync(RepositoryName repository, int number, CancellationToken cancellationToken)
         => Task.FromResult(GetComments(number));

@@ -58,13 +58,13 @@ public sealed partial class PullRequestEvaluator(
     private async Task<ContributorLevel> ClassifyAsync(RepositoryName repository, PullRequest pullRequest, CancellationToken cancellationToken)
     {
         var author = pullRequest.User;
-        var isBot = author.Type == "Bot";
+        var isBot = author.Type == GitHubUserTypes.Bot;
 
         var hasWriteAccess = false;
         if (!isBot)
         {
             var permission = await github.GetCollaboratorPermissionAsync(repository, author.Login, cancellationToken);
-            hasWriteAccess = permission.Permission is "admin" or "write";
+            hasWriteAccess = permission.Permission is CollaboratorPermissions.Admin or CollaboratorPermissions.Write;
         }
 
         Contributor? contributor = null;

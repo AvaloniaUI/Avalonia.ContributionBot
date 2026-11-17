@@ -38,7 +38,7 @@ public static class BotComment
     {
         foreach (var comment in comments)
         {
-            if (comment.User.Type == "Bot" && comment.Body is not null && comment.Body.StartsWith(Marker, StringComparison.Ordinal))
+            if (comment.User.Type == GitHubUserTypes.Bot && comment.Body is not null && comment.Body.StartsWith(Marker, StringComparison.Ordinal))
                 return comment;
         }
 

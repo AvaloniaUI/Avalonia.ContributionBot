@@ -39,7 +39,7 @@ public sealed class BotCommentTests
     [Fact]
     public void Finds_Bot_Comment_With_Marker()
     {
-        var user = new GitHubUser { Login = "someone", Id = 1, Type = "User" };
+        var user = new GitHubUser { Login = "someone", Id = 1, Type = GitHubUserTypes.User };
         var github = new FakeGitHubClient();
         github.AddComment(42, "Hello", user);
         github.AddComment(42, $"{BotComment.Marker}\nCopied by a user", user);

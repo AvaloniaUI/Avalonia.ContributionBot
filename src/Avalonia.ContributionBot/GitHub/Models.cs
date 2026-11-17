@@ -8,8 +8,19 @@ public sealed class GitHubUser
 
     public required long Id { get; init; }
 
-    /// <summary>The account type: <c>User</c>, <c>Bot</c>, <c>Organization</c> or <c>Mannequin</c>.</summary>
+    /// <summary>The account type, one of the <see cref="GitHubUserTypes"/> values.</summary>
     public required string Type { get; init; }
+}
+
+/// <summary>
+/// The values of <see cref="GitHubUser.Type"/>.
+/// </summary>
+public static class GitHubUserTypes
+{
+    public const string User = "User";
+    public const string Bot = "Bot";
+    public const string Organization = "Organization";
+    public const string Mannequin = "Mannequin";
 }
 
 public sealed class GitRef
@@ -41,8 +52,19 @@ public sealed class IssueComment
 
 public sealed class CollaboratorPermission
 {
-    /// <summary>The base permission: <c>admin</c>, <c>write</c>, <c>read</c> or <c>none</c>.</summary>
+    /// <summary>The base permission, one of the <see cref="CollaboratorPermissions"/> values.</summary>
     public required string Permission { get; init; }
+}
+
+/// <summary>
+/// The values of <see cref="CollaboratorPermission.Permission"/>.
+/// </summary>
+public static class CollaboratorPermissions
+{
+    public const string Admin = "admin";
+    public const string Write = "write";
+    public const string Read = "read";
+    public const string None = "none";
 }
 
 /// <summary>

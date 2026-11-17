@@ -248,3 +248,27 @@ internal sealed class DiscussionCommentNode
     [JsonPropertyName("url")]
     public required string Url { get; init; }
 }
+
+internal sealed class NodeVariables
+{
+    [JsonPropertyName("id")]
+    public required string Id { get; init; }
+}
+
+internal sealed class DiscussionCommentNodeData
+{
+    [JsonPropertyName("node")]
+    public DiscussionCommentReplyNode? Node { get; init; }
+}
+
+internal sealed class DiscussionCommentReplyNode
+{
+    [JsonPropertyName("replyTo")]
+    public NodeReference? ReplyTo { get; init; }
+}
+
+internal sealed class NodeReference
+{
+    [JsonPropertyName("id")]
+    public required string Id { get; init; }
+}

@@ -35,6 +35,14 @@ internal sealed class FakeGitHubClient : IGitHubClient
 
     public Dictionary<int, PullRequest> PullRequests { get; } = [];
 
+    /// <summary>The users returned by <see cref="GetUserAsync"/>, by login.</summary>
+    public Dictionary<string, GitHubUser> Users { get; } = [];
+
+    /// <summary>The node ID of the top-level comment that each discussion reply belongs to, by reply node ID.</summary>
+    public Dictionary<string, string> DiscussionReplyTo { get; } = [];
+
+    public List<(string DiscussionNodeId, string? ReplyToNodeId, string Body)> DiscussionComments { get; } = [];
+
     public List<(string Sha, CommitStatus Status)> Statuses { get; } = [];
 
     public string GetContent(string path)
@@ -89,6 +97,9 @@ internal sealed class FakeGitHubClient : IGitHubClient
         return Task.FromResult(_files[path].Sha);
     }
 
+    public Task<GitHubUser?> GetUserAsync(string login, CancellationToken cancellationToken)
+        => Task.FromResult(Users.GetValueOrDefault(login));
+
     public Task<CollaboratorPermission> GetCollaboratorPermissionAsync(RepositoryName repository, string login, CancellationToken cancellationToken)
         => Task.FromResult(new CollaboratorPermission { Permission = Permissions.GetValueOrDefault(login, CollaboratorPermissions.Read) });
 
@@ -142,6 +153,12 @@ internal sealed class FakeGitHubClient : IGitHubClient
             ? Task.FromResult(pullRequest)
             : throw new GitHubApiException(HttpStatusCode.NotFound, $"GET pull request {number}", "Not Found");
 
+    public Task<string?> GetDiscussionCommentReplyToAsync(string commentNodeId, CancellationToken cancellationToken)
+        => Task.FromResult(DiscussionReplyTo.GetValueOrDefault(commentNodeId));
+
     public Task<Uri> AddDiscussionCommentAsync(string discussionNodeId, string? replyToNodeId, string body, CancellationToken cancellationToken)
-        => throw new NotSupportedException();
+    {
+        DiscussionComments.Add((discussionNodeId, replyToNodeId, body));
+        return Task.FromResult(new Uri($"https://github.com/discussion-comments/{DiscussionComments.Count}"));
+    }
 }

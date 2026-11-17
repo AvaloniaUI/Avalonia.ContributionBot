@@ -6,10 +6,18 @@
     <File Path="global.json" />
   </Folder>
   <Folder Name="/Templates/">
+    <File Path="templates/AlreadyDenouncedReply.md" />
+    <File Path="templates/AlreadyVouchedReply.md" />
     <File Path="templates/ClaAccepted.md" />
     <File Path="templates/ClaRequired.md" />
     <File Path="templates/Denounced.md" />
+    <File Path="templates/DenouncedReply.md" />
+    <File Path="templates/NothingToRemoveReply.md" />
     <File Path="templates/NotVouched.md" />
+    <File Path="templates/UndenouncedReply.md" />
+    <File Path="templates/UnvouchedReply.md" />
+    <File Path="templates/UserNotFoundReply.md" />
+    <File Path="templates/VouchedReply.md" />
   </Folder>
   <Project Path="src/Avalonia.ContributionBot/Avalonia.ContributionBot.csproj" />
   <Project Path="src/Avalonia.ContributionBot.Migration/Avalonia.ContributionBot.Migration.csproj" />

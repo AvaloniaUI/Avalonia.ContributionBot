@@ -67,30 +67,6 @@ public sealed class EventHandlerTests
         Assert.Empty(github.Statuses);
     }
 
-    [Fact]
-    public async Task Discussion_Comment_Handler_Handles_Command()
-    {
-        var logger = new FakeLogger<DiscussionCommentEventHandler>();
-        var payload = Parse<DiscussionCommentEvent>(SamplePayloads.DiscussionComment("@avalonia-bot vouch"));
-
-        await new DiscussionCommentEventHandler(TestSettings.Default, logger).HandleAsync(payload, Token);
-
-        Assert.Equal("Command 'vouch' from maintainer on discussion AvaloniaUI/Avalonia#7.", GetSingleInformation(logger));
-    }
-
-    [Theory]
-    [InlineData("@avalonia-bot vouch", CommentActions.Edited, "Ignoring discussion comment action 'edited'.")]
-    [InlineData("Hello, I'd like to contribute!", CommentActions.Created, "Ignoring discussion comment 666: not a bot command.")]
-    public async Task Discussion_Comment_Handler_Ignores_Irrelevant_Comments(string body, string action, string expectedLog)
-    {
-        var logger = new FakeLogger<DiscussionCommentEventHandler>();
-        var payload = Parse<DiscussionCommentEvent>(SamplePayloads.DiscussionComment(body, action));
-
-        await new DiscussionCommentEventHandler(TestSettings.Default, logger).HandleAsync(payload, Token);
-
-        Assert.Equal(expectedLog, GetSingleInformation(logger));
-    }
-
     private static PullRequestEventHandler CreatePullRequestHandler(
         FakeGitHubClient github,
         FakeLogger<PullRequestEventHandler>? logger = null)

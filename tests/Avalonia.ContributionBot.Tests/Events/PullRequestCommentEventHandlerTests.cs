@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging.Testing;
 
 namespace Avalonia.ContributionBot.Tests.Events;
 
-public sealed class IssueCommentEventHandlerTests
+public sealed class PullRequestCommentEventHandlerTests
 {
     private const int Number = 42;
     private const string HeadSha = "abc123";
@@ -21,9 +21,9 @@ public sealed class IssueCommentEventHandlerTests
     private static readonly DateTimeOffset s_commentDate = new(2026, 11, 16, 10, 0, 0, TimeSpan.Zero);
 
     private readonly FakeGitHubClient _github = new();
-    private readonly FakeLogger<IssueCommentEventHandler> _logger = new();
+    private readonly FakeLogger<PullRequestCommentEventHandler> _logger = new();
 
-    public IssueCommentEventHandlerTests()
+    public PullRequestCommentEventHandlerTests()
         => _github.PullRequests[Number] = new PullRequest
         {
             Number = Number,
@@ -205,7 +205,7 @@ public sealed class IssueCommentEventHandlerTests
             new FakeLogger<ContributorStore>());
 
         var evaluator = new PullRequestEvaluator(_github, store, settings, new FakeLogger<PullRequestEvaluator>());
-        var handler = new IssueCommentEventHandler(_github, store, evaluator, settings, _logger);
+        var handler = new PullRequestCommentEventHandler(_github, store, evaluator, settings, _logger);
         var payload = Assert.IsType<IssueCommentEvent>(JsonSerializer.Deserialize(json, typeof(IssueCommentEvent), GitHubJsonContext.Default));
 
         await handler.HandleAsync(payload, Token);

@@ -9,16 +9,16 @@ namespace Avalonia.ContributionBot.Events;
 /// <summary>
 /// Handles <c>issue_comment</c> events carrying a bot command on an open pull request.
 /// </summary>
-public sealed partial class IssueCommentEventHandler(
+public sealed partial class PullRequestCommentEventHandler(
     IGitHubClient github,
     ContributorStore store,
     PullRequestEvaluator evaluator,
     BotSettings settings,
-    ILogger<IssueCommentEventHandler> logger)
+    ILogger<PullRequestCommentEventHandler> logger)
     : IEventHandler<IssueCommentEvent>
 {
-    private const string AgreeCommand = "agree";
-    private const string RecheckCommand = "recheck";
+    private const string AgreeCommandName = "agree";
+    private const string RecheckCommandName = "recheck";
 
     public async Task HandleAsync(IssueCommentEvent payload, CancellationToken cancellationToken)
     {
@@ -58,9 +58,9 @@ public sealed partial class IssueCommentEventHandler(
         var repository = payload.Repository.GetName();
         LogCommand(logger, command, comment.User.Login, repository, issue.Number);
 
-        if (command.Equals(AgreeCommand, StringComparison.OrdinalIgnoreCase))
+        if (command.Equals(AgreeCommandName, StringComparison.OrdinalIgnoreCase))
             await AgreeAsync(repository, issue, comment, cancellationToken);
-        else if (command.Equals(RecheckCommand, StringComparison.OrdinalIgnoreCase))
+        else if (command.Equals(RecheckCommandName, StringComparison.OrdinalIgnoreCase))
             await RecheckAsync(repository, issue, comment, cancellationToken);
         else
             LogUnknownCommand(logger, command);

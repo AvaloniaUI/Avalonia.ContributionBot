@@ -17,6 +17,9 @@ public sealed partial class DryRunGitHubClient(IGitHubClient inner, ILogger<DryR
     public Task<PullRequest> GetPullRequestAsync(RepositoryName repository, int number, CancellationToken cancellationToken)
         => inner.GetPullRequestAsync(repository, number, cancellationToken);
 
+    public Task<GitHubUser?> GetUserAsync(string login, CancellationToken cancellationToken)
+        => inner.GetUserAsync(login, cancellationToken);
+
     public Task<CollaboratorPermission> GetCollaboratorPermissionAsync(RepositoryName repository, string login, CancellationToken cancellationToken)
         => inner.GetCollaboratorPermissionAsync(repository, login, cancellationToken);
 
@@ -62,6 +65,9 @@ public sealed partial class DryRunGitHubClient(IGitHubClient inner, ILogger<DryR
         LogPutFile(logger, path, repository, branch, commitMessage, content);
         return Task.FromResult("dry-run");
     }
+
+    public Task<string?> GetDiscussionCommentReplyToAsync(string commentNodeId, CancellationToken cancellationToken)
+        => inner.GetDiscussionCommentReplyToAsync(commentNodeId, cancellationToken);
 
     public Task<Uri> AddDiscussionCommentAsync(string discussionNodeId, string? replyToNodeId, string body, CancellationToken cancellationToken)
     {

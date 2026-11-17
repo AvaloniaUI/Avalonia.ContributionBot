@@ -390,6 +390,61 @@ public sealed class GitHubClientTests
     }
 
     [Fact]
+    public async Task Gets_Reply_To_Of_Discussion_Comment()
+    {
+        var handler = new FakeHttpHandler()
+            .On(
+                HttpMethod.Post,
+                "/graphql",
+                HttpStatusCode.OK,
+                """{ "data": { "node": { "replyTo": { "id": "DC_1" } } } }""");
+
+        var replyTo = await CreateClient(handler).GetDiscussionCommentReplyToAsync("DC_2", Token);
+
+        Assert.Equal("DC_1", replyTo);
+        Assert.Equal("DC_2", Assert.Single(handler.Requests).GetJsonBody().GetProperty("variables").GetProperty("id").GetString());
+    }
+
+    [Fact]
+    public async Task Gets_No_Reply_To_For_Top_Level_Discussion_Comment()
+    {
+        var handler = new FakeHttpHandler()
+            .On(
+                HttpMethod.Post,
+                "/graphql",
+                HttpStatusCode.OK,
+                """{ "data": { "node": { "replyTo": null } } }""");
+
+        Assert.Null(await CreateClient(handler).GetDiscussionCommentReplyToAsync("DC_1", Token));
+    }
+
+    [Fact]
+    public async Task Gets_User()
+    {
+        var handler = new FakeHttpHandler()
+            .On(
+                HttpMethod.Get,
+                "/users/some-user",
+                HttpStatusCode.OK,
+                """{ "login": "some-user", "id": 1234, "type": "User", "site_admin": false }""");
+
+        var user = await CreateClient(handler).GetUserAsync("some-user", Token);
+
+        Assert.NotNull(user);
+        Assert.Equal(1234, user.Id);
+        Assert.Equal("some-user", user.Login);
+    }
+
+    [Fact]
+    public async Task Returns_Null_For_Missing_User()
+    {
+        var handler = new FakeHttpHandler()
+            .On(HttpMethod.Get, "/users/nobody", HttpStatusCode.NotFound, """{ "message": "Not Found" }""");
+
+        Assert.Null(await CreateClient(handler).GetUserAsync("nobody", Token));
+    }
+
+    [Fact]
     public async Task Throws_On_GraphQL_Errors()
     {
         var handler = new FakeHttpHandler()

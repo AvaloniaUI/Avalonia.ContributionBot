@@ -73,7 +73,13 @@ internal static class SamplePayloads
                """;
     }
 
-    public static string DiscussionComment(string body, string action = CommentActions.Created, long? parentId = null)
+    public static string DiscussionComment(
+        string body,
+        string action = CommentActions.Created,
+        long? parentId = null,
+        string commenterLogin = "maintainer",
+        long commenterId = 5005,
+        string commenterType = GitHubUserTypes.User)
         => $$"""
            {
              "action": "{{action}}",
@@ -87,8 +93,9 @@ internal static class SamplePayloads
                "id": 666,
                "node_id": "DC_kwDOA",
                "body": {{JsonSerializer.Serialize(body)}},
-               "user": { "login": "maintainer", "id": 5005, "type": "User" },
+               "user": { "login": "{{commenterLogin}}", "id": {{commenterId}}, "type": "{{commenterType}}" },
                "html_url": "https://github.com/AvaloniaUI/Avalonia/discussions/7#discussioncomment-666",
+               "created_at": "2026-11-17T09:00:00Z",
                "parent_id": {{(parentId?.ToString() ?? "null")}}
              },
              "repository": {{Repository}},

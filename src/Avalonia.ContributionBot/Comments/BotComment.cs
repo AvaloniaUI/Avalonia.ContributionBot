@@ -13,14 +13,7 @@ public static class BotComment
     /// </summary>
     public static string Render(BotCommentTemplate template, string author, RepositoryName repository, BotSettings settings)
     {
-        var name = $"Templates.{template}.md";
-        using var stream = typeof(BotComment).Assembly.GetManifestResourceStream(name)
-            ?? throw new InvalidOperationException($"The comment template '{name}' isn't embedded.");
-
-        using var reader = new StreamReader(stream);
-        var text = reader.ReadToEnd()
-            .ReplaceLineEndings("\n")
-            .TrimEnd()
+        var text = CommentTemplate.Load(template.ToString())
             .Replace("{author}", author)
             .Replace("{repo}", repository.ToString())
             .Replace("{prefix}", settings.CommandPrefix)

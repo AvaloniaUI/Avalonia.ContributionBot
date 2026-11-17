@@ -7,6 +7,11 @@ public interface IGitHubClient
 {
     Task<PullRequest> GetPullRequestAsync(RepositoryName repository, int number, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Returns the user with the given login, or null if there is none.
+    /// </summary>
+    Task<GitHubUser?> GetUserAsync(string login, CancellationToken cancellationToken);
+
     Task<CollaboratorPermission> GetCollaboratorPermissionAsync(RepositoryName repository, string login, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<IssueComment>> GetIssueCommentsAsync(RepositoryName repository, int number, CancellationToken cancellationToken);
@@ -33,5 +38,14 @@ public interface IGitHubClient
         string commitMessage,
         CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Returns the node ID of the top-level comment that the given discussion comment replies to,
+    /// or null if the comment is itself a top-level comment.
+    /// </summary>
+    Task<string?> GetDiscussionCommentReplyToAsync(string commentNodeId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Adds a comment to a discussion, as a reply to the top-level comment <paramref name="replyToNodeId"/> if not null.
+    /// </summary>
     Task<Uri> AddDiscussionCommentAsync(string discussionNodeId, string? replyToNodeId, string body, CancellationToken cancellationToken);
 }

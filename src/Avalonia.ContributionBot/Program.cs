@@ -95,8 +95,8 @@ internal static partial class Program
 
             var dispatcher = new EventDispatcher(
                 new PullRequestEventHandler(evaluator, loggerFactory.CreateLogger<PullRequestEventHandler>()),
-                new IssueCommentEventHandler(github, store, evaluator, settings, loggerFactory.CreateLogger<IssueCommentEventHandler>()),
-                new DiscussionCommentEventHandler(settings, loggerFactory.CreateLogger<DiscussionCommentEventHandler>()),
+                new PullRequestCommentEventHandler(github, store, evaluator, settings, loggerFactory.CreateLogger<PullRequestCommentEventHandler>()),
+                new DiscussionCommentEventHandler(github, store, settings, loggerFactory.CreateLogger<DiscussionCommentEventHandler>()),
                 loggerFactory.CreateLogger<EventDispatcher>());
 
             await using var payload = File.OpenRead(settings.EventFile);

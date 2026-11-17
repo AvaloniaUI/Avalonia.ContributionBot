@@ -33,6 +33,17 @@ public sealed class GitHubClient(HttpClient http) : IGitHubClient
             GitHubJsonContext.Default.PullRequest,
             cancellationToken);
 
+    public async Task<GitHubUser?> GetUserAsync(string login, CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"users/{Uri.EscapeDataString(login)}");
+        using var response = await http.SendAsync(request, cancellationToken);
+        if (response.StatusCode == HttpStatusCode.NotFound)
+            return null;
+
+        await EnsureSuccessAsync(request, response, cancellationToken);
+        return await ReadAsync(response, GitHubJsonContext.Default.GitHubUser, cancellationToken);
+    }
+
     public Task<CollaboratorPermission> GetCollaboratorPermissionAsync(RepositoryName repository, string login, CancellationToken cancellationToken)
         => GetAsync(
             $"{RepositoryPath(repository)}/collaborators/{Uri.EscapeDataString(login)}/permission",
@@ -176,33 +187,63 @@ public sealed class GitHubClient(HttpClient http) : IGitHubClient
         return result.Content.Sha;
     }
 
+    public async Task<string?> GetDiscussionCommentReplyToAsync(string commentNodeId, CancellationToken cancellationToken)
+    {
+        var data = await SendGraphQLAsync(
+            """
+            query($id: ID!) {
+              node(id: $id) {
+                ... on DiscussionComment { replyTo { id } }
+              }
+            }
+            """,
+            new NodeVariables { Id = commentNodeId },
+            GitHubJsonContext.Default.GraphQLRequestNodeVariables,
+            GitHubJsonContext.Default.GraphQLResponseDiscussionCommentNodeData,
+            cancellationToken);
+
+        return data.Node?.ReplyTo?.Id;
+    }
+
     public async Task<Uri> AddDiscussionCommentAsync(string discussionNodeId, string? replyToNodeId, string body, CancellationToken cancellationToken)
     {
-        var graphRequest = new GraphQLRequest<AddDiscussionCommentVariables>
-        {
-            Query =
-                """
-                mutation($discussionId: ID!, $replyToId: ID, $body: String!) {
-                  addDiscussionComment(input: { discussionId: $discussionId, replyToId: $replyToId, body: $body }) {
-                    comment { url }
-                  }
-                }
-                """,
-            Variables = new AddDiscussionCommentVariables
+        var data = await SendGraphQLAsync(
+            """
+            mutation($discussionId: ID!, $replyToId: ID, $body: String!) {
+              addDiscussionComment(input: { discussionId: $discussionId, replyToId: $replyToId, body: $body }) {
+                comment { url }
+              }
+            }
+            """,
+            new AddDiscussionCommentVariables
             {
                 DiscussionId = discussionNodeId,
                 ReplyToId = replyToNodeId,
                 Body = body
-            }
-        };
+            },
+            GitHubJsonContext.Default.GraphQLRequestAddDiscussionCommentVariables,
+            GitHubJsonContext.Default.GraphQLResponseAddDiscussionCommentData,
+            cancellationToken);
+
+        return new Uri(data.AddDiscussionComment.Comment.Url, UriKind.Absolute);
+    }
+
+    private async Task<TData> SendGraphQLAsync<TVariables, TData>(
+        string query,
+        TVariables variables,
+        JsonTypeInfo<GraphQLRequest<TVariables>> requestType,
+        JsonTypeInfo<GraphQLResponse<TData>> responseType,
+        CancellationToken cancellationToken)
+    {
+        var graphRequest = new GraphQLRequest<TVariables> { Query = query, Variables = variables };
 
         using var request = new HttpRequestMessage(HttpMethod.Post, GraphQLPath)
         {
-            Content = JsonContent.Create(graphRequest, GitHubJsonContext.Default.GraphQLRequestAddDiscussionCommentVariables)
+            Content = JsonContent.Create(graphRequest, requestType)
         };
 
         using var response = await SendAsync(request, cancellationToken);
-        var result = await ReadAsync(response, GitHubJsonContext.Default.GraphQLResponseAddDiscussionCommentData, cancellationToken);
+        var result = await ReadAsync(response, responseType, cancellationToken);
 
         if (result.Errors is { Count: > 0 } errors)
         {
@@ -213,10 +254,8 @@ public sealed class GitHubClient(HttpClient http) : IGitHubClient
             throw new GitHubApiException(response.StatusCode, Describe(request), string.Join("; ", messages));
         }
 
-        var url = result.Data?.AddDiscussionComment.Comment.Url
+        return result.Data
             ?? throw new GitHubApiException(response.StatusCode, Describe(request), "The response contains no data.");
-
-        return new Uri(url, UriKind.Absolute);
     }
 
     private async Task<T> GetAsync<T>(string url, JsonTypeInfo<T> responseType, CancellationToken cancellationToken)

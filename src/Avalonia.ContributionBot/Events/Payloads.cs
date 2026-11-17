@@ -116,5 +116,7 @@ public sealed class EventDiscussionComment
 
     public required string HtmlUrl { get; init; }
 
+    public required DateTimeOffset CreatedAt { get; init; }
+
     public long? ParentId { get; init; }
 }

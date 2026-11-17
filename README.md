@@ -130,13 +130,14 @@ dotnet run --project src/Avalonia.ContributionBot -- --dry-run --event-name pull
 
 ## Releasing
 
-Run the **Release** workflow from `main` with the new version (for example `1.2.0`). The workflow:
+Set the new version (for example `1.2.0`) in the `Version` property of `Directory.Build.props` and merge it to `main`, then run the **Release** workflow from `main`. The workflow:
 
-1. Builds and tests the bot, then publishes the Native AOT binary for linux-x64.
-2. Generates a build provenance attestation for the binary.
-3. Creates a release commit on top of `main` that pins the binary's tag and SHA-256 in the composite action, `action.yml`.
-4. Pushes that commit as the tag `v1.2.0` and moves the major tag `v1` to it. The commit isn't pushed to `main`, so `action.yml` on `main` stays unpinned and only works from a release tag.
-5. Creates the GitHub release with the binary.
+1. Reads the version from the project, and stops if its tag already exists.
+2. Builds and tests the bot, then publishes the Native AOT binary for linux-x64.
+3. Generates a build provenance attestation for the binary.
+4. Creates a release commit on top of `main` that pins the binary's tag and SHA-256 in the composite action, `action.yml`.
+5. Pushes that commit as the tag `v1.2.0` and moves the major tag `v1` to it. The commit isn't pushed to `main`, so `action.yml` on `main` stays unpinned and only works from a release tag.
+6. Creates the GitHub release with the binary.
 
 The action downloads the binary of its own tag and checks its SHA-256 before running it, so a replaced release asset fails the check.
 

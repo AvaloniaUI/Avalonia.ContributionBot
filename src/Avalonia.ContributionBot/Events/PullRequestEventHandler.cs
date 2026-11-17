@@ -16,11 +16,11 @@ public sealed partial class PullRequestEventHandler(PullRequestEvaluator evaluat
 
         switch (payload.Action)
         {
-            case "opened":
-            case "reopened":
+            case PullRequestActions.Opened:
+            case PullRequestActions.Reopened:
                 return evaluator.EvaluateAsync(repository, payload.PullRequest, cancellationToken);
 
-            case "synchronize":
+            case PullRequestActions.Synchronize:
                 return evaluator.UpdateStatusAsync(repository, payload.PullRequest, cancellationToken);
 
             default:

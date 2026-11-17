@@ -70,11 +70,11 @@ public sealed class GitHubClient(HttpClient http) : IGitHubClient
         await EnsureSuccessAsync(request, response, cancellationToken);
 
         var content = await ReadAsync(response, GitHubJsonContext.Default.ContentResponse, cancellationToken);
-        if (content.Type != "file")
+        if (content.Type != ContentTypes.File)
             throw new InvalidOperationException($"'{path}' in {repository}@{branch} is a {content.Type}, not a file.");
 
         // The contents API omits the content of files larger than 1 MB (encoding "none"); the blob API returns it.
-        if (content.Encoding == "base64" && content.Content is not null)
+        if (content.Encoding == ContentEncodings.Base64 && content.Content is not null)
             return new RepositoryFile { Content = DecodeBase64(content.Content), Sha = content.Sha };
 
         var blob = await GetAsync(
@@ -82,7 +82,7 @@ public sealed class GitHubClient(HttpClient http) : IGitHubClient
             GitHubJsonContext.Default.BlobResponse,
             cancellationToken);
 
-        if (blob.Encoding != "base64")
+        if (blob.Encoding != ContentEncodings.Base64)
             throw new InvalidOperationException($"Unexpected blob encoding '{blob.Encoding}' for '{path}'.");
 
         return new RepositoryFile { Content = DecodeBase64(blob.Content), Sha = blob.Sha };
@@ -110,7 +110,7 @@ public sealed class GitHubClient(HttpClient http) : IGitHubClient
         => SendJsonAsync(
             HttpMethod.Patch,
             $"{RepositoryPath(repository)}/pulls/{number}",
-            new UpdatePullRequestRequest { State = "closed" },
+            new UpdatePullRequestRequest { State = IssueStates.Closed },
             GitHubJsonContext.Default.UpdatePullRequestRequest,
             GitHubJsonContext.Default.PullRequest,
             cancellationToken);

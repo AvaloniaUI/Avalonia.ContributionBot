@@ -20,10 +20,10 @@ public sealed class EventDispatcherTests
     [Fact]
     public async Task Dispatches_Pull_Request_Target()
     {
-        await CreateDispatcher().DispatchAsync("pull_request_target", SamplePayloads.ToStream(SamplePayloads.PullRequest("reopened")), Token);
+        await CreateDispatcher().DispatchAsync(GitHubEventNames.PullRequestTarget, SamplePayloads.ToStream(SamplePayloads.PullRequest(PullRequestActions.Reopened)), Token);
 
         var payload = Assert.Single(_pullRequests.Received);
-        Assert.Equal("reopened", payload.Action);
+        Assert.Equal(PullRequestActions.Reopened, payload.Action);
         Assert.Equal(42, payload.Number);
         Assert.Equal("contributor", payload.PullRequest.User.Login);
         Assert.Equal("abc123", payload.PullRequest.Head.Sha);
@@ -35,7 +35,7 @@ public sealed class EventDispatcherTests
     [Fact]
     public async Task Dispatches_Issue_Comment()
     {
-        await CreateDispatcher().DispatchAsync("issue_comment", SamplePayloads.ToStream(SamplePayloads.IssueComment("@bot agree")), Token);
+        await CreateDispatcher().DispatchAsync(GitHubEventNames.IssueComment, SamplePayloads.ToStream(SamplePayloads.IssueComment("@bot agree")), Token);
 
         var payload = Assert.Single(_issueComments.Received);
         Assert.NotNull(payload.Issue.PullRequest);
@@ -47,7 +47,7 @@ public sealed class EventDispatcherTests
     public async Task Dispatches_Issue_Comment_On_Issue()
     {
         await CreateDispatcher().DispatchAsync(
-            "issue_comment",
+            GitHubEventNames.IssueComment,
             SamplePayloads.ToStream(SamplePayloads.IssueComment("text", isPullRequest: false)),
             Token);
 
@@ -58,7 +58,7 @@ public sealed class EventDispatcherTests
     public async Task Dispatches_Discussion_Comment()
     {
         await CreateDispatcher().DispatchAsync(
-            "discussion_comment",
+            GitHubEventNames.DiscussionComment,
             SamplePayloads.ToStream(SamplePayloads.DiscussionComment("@bot vouch", parentId: 600)),
             Token);
 
@@ -88,7 +88,7 @@ public sealed class EventDispatcherTests
     {
         await Assert.ThrowsAsync<JsonException>(
             () => CreateDispatcher().DispatchAsync(
-                "pull_request_target",
+                GitHubEventNames.PullRequestTarget,
                 SamplePayloads.ToStream("""{ "action": "opened" }"""),
                 Token));
     }
@@ -98,7 +98,7 @@ public sealed class EventDispatcherTests
     {
         await Assert.ThrowsAsync<JsonException>(
             () => CreateDispatcher().DispatchAsync(
-                "pull_request_target",
+                GitHubEventNames.PullRequestTarget,
                 SamplePayloads.ToStream("null"),
                 Token));
     }

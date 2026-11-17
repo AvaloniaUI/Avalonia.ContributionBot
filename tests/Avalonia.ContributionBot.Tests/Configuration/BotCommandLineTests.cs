@@ -1,4 +1,5 @@
 using Avalonia.ContributionBot.Configuration;
+using Avalonia.ContributionBot.Events;
 using Avalonia.ContributionBot.GitHub;
 
 namespace Avalonia.ContributionBot.Tests.Configuration;
@@ -7,7 +8,7 @@ public sealed class BotCommandLineTests
 {
     private static readonly string[] s_requiredArgs =
     [
-        "--event-name", "pull_request_target",
+        "--event-name", GitHubEventNames.PullRequestTarget,
         "--event-file", "/tmp/event.json",
         "--store-repository", "ExampleOrg/ExampleRepo",
         "--cla-url", "https://example.com/CLA.md",
@@ -28,7 +29,7 @@ public sealed class BotCommandLineTests
     {
         var settings = GetSettings();
 
-        Assert.Equal("pull_request_target", settings.EventName);
+        Assert.Equal(GitHubEventNames.PullRequestTarget, settings.EventName);
         Assert.Equal("/tmp/event.json", settings.EventFile);
         Assert.Equal("@avalonia-bot", settings.CommandPrefix);
         Assert.Equal(new RepositoryName("ExampleOrg", "ExampleRepo"), settings.StoreRepository);

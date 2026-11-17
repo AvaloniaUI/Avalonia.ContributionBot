@@ -339,7 +339,7 @@ public sealed class GitHubClientTests
 
         await CreateClient(handler).ClosePullRequestAsync(s_repository, 42, Token);
 
-        Assert.Equal("closed", Assert.Single(handler.Requests).GetJsonBody().GetProperty("state").GetString());
+        Assert.Equal(IssueStates.Closed, Assert.Single(handler.Requests).GetJsonBody().GetProperty("state").GetString());
     }
 
     [Theory]

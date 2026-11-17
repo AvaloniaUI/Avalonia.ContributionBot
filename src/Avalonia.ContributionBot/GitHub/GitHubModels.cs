@@ -72,6 +72,15 @@ public static class CollaboratorPermissions
 }
 
 /// <summary>
+/// The states of issues and pull requests.
+/// </summary>
+public static class IssueStates
+{
+    public const string Open = "open";
+    public const string Closed = "closed";
+}
+
+/// <summary>
 /// The text content of a repository file, with the blob SHA needed to update it.
 /// </summary>
 public sealed class RepositoryFile
@@ -98,13 +107,36 @@ public sealed class CommitStatus
 
 internal sealed class ContentResponse
 {
+    /// <summary>The kind of entry, one of the <see cref="ContentTypes"/> values.</summary>
     public required string Type { get; init; }
 
     public required string Sha { get; init; }
 
     public string? Content { get; init; }
 
+    /// <summary>The encoding of <see cref="Content"/>, one of the <see cref="ContentEncodings"/> values.</summary>
     public string? Encoding { get; init; }
+}
+
+/// <summary>
+/// The values of <see cref="ContentResponse.Type"/>.
+/// </summary>
+internal static class ContentTypes
+{
+    public const string File = "file";
+    public const string Directory = "dir";
+    public const string Symlink = "symlink";
+    public const string Submodule = "submodule";
+}
+
+/// <summary>
+/// The values of <see cref="ContentResponse.Encoding"/> and <see cref="BlobResponse.Encoding"/>.
+/// <see cref="None"/> means the content is omitted, which happens for files larger than 1 MB.
+/// </summary>
+internal static class ContentEncodings
+{
+    public const string Base64 = "base64";
+    public const string None = "none";
 }
 
 internal sealed class BlobResponse
@@ -113,6 +145,7 @@ internal sealed class BlobResponse
 
     public required string Content { get; init; }
 
+    /// <summary>The encoding of <see cref="Content"/>, one of the <see cref="ContentEncodings"/> values.</summary>
     public required string Encoding { get; init; }
 }
 
@@ -144,6 +177,7 @@ internal sealed class CommentRequest
 
 internal sealed class UpdatePullRequestRequest
 {
+    /// <summary>The new state, one of the <see cref="IssueStates"/> values.</summary>
     public required string State { get; init; }
 }
 

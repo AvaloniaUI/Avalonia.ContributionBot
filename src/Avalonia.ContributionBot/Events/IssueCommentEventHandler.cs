@@ -25,7 +25,7 @@ public sealed partial class IssueCommentEventHandler(
         var issue = payload.Issue;
         var comment = payload.Comment;
 
-        if (payload.Action != "created")
+        if (payload.Action != CommentActions.Created)
         {
             LogIgnoredAction(logger, payload.Action);
             return;
@@ -37,7 +37,7 @@ public sealed partial class IssueCommentEventHandler(
             return;
         }
 
-        if (issue.State != "open")
+        if (issue.State != IssueStates.Open)
         {
             LogIgnoredPullRequestState(logger, issue.Number, issue.State);
             return;

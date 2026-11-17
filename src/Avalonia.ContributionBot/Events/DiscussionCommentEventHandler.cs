@@ -11,7 +11,7 @@ public sealed partial class DiscussionCommentEventHandler(BotSettings settings, 
 {
     public Task HandleAsync(DiscussionCommentEvent payload, CancellationToken cancellationToken)
     {
-        if (payload.Action != "created")
+        if (payload.Action != CommentActions.Created)
         {
             LogIgnoredAction(logger, payload.Action);
             return Task.CompletedTask;

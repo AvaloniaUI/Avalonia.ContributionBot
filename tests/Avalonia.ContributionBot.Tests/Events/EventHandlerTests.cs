@@ -24,8 +24,8 @@ public sealed class EventHandlerTests
     }
 
     [Theory]
-    [InlineData("opened")]
-    [InlineData("reopened")]
+    [InlineData(PullRequestActions.Opened)]
+    [InlineData(PullRequestActions.Reopened)]
     public async Task Pull_Request_Handler_Evaluates_Opened_Pull_Requests(string action)
     {
         var github = new FakeGitHubClient();
@@ -42,7 +42,7 @@ public sealed class EventHandlerTests
     public async Task Pull_Request_Handler_Only_Updates_Status_On_Synchronize()
     {
         var github = new FakeGitHubClient();
-        var payload = Parse<PullRequestEvent>(SamplePayloads.PullRequest("synchronize"));
+        var payload = Parse<PullRequestEvent>(SamplePayloads.PullRequest(PullRequestActions.Synchronize));
 
         await CreatePullRequestHandler(github).HandleAsync(payload, Token);
 
@@ -79,8 +79,8 @@ public sealed class EventHandlerTests
     }
 
     [Theory]
-    [InlineData("@avalonia-bot vouch", "edited", "Ignoring discussion comment action 'edited'.")]
-    [InlineData("Hello, I'd like to contribute!", "created", "Ignoring discussion comment 666: not a bot command.")]
+    [InlineData("@avalonia-bot vouch", CommentActions.Edited, "Ignoring discussion comment action 'edited'.")]
+    [InlineData("Hello, I'd like to contribute!", CommentActions.Created, "Ignoring discussion comment 666: not a bot command.")]
     public async Task Discussion_Comment_Handler_Ignores_Irrelevant_Comments(string body, string action, string expectedLog)
     {
         var logger = new FakeLogger<DiscussionCommentEventHandler>();

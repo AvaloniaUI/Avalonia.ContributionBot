@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using Avalonia.ContributionBot.Events;
 using Avalonia.ContributionBot.GitHub;
 
 namespace Avalonia.ContributionBot.Tests.Events;
@@ -19,7 +20,7 @@ internal static class SamplePayloads
         { "login": "sender", "id": 2002, "type": "User", "site_admin": false }
         """;
 
-    public static string PullRequest(string action = "opened")
+    public static string PullRequest(string action = PullRequestActions.Opened)
         => $$"""
            {
              "action": "{{action}}",
@@ -39,9 +40,9 @@ internal static class SamplePayloads
 
     public static string IssueComment(
         string body,
-        string action = "created",
+        string action = CommentActions.Created,
         bool isPullRequest = true,
-        string state = "open",
+        string state = IssueStates.Open,
         string commenterLogin = "commenter",
         long commenterId = 3003,
         string commenterType = GitHubUserTypes.User)
@@ -72,7 +73,7 @@ internal static class SamplePayloads
                """;
     }
 
-    public static string DiscussionComment(string body, string action = "created", long? parentId = null)
+    public static string DiscussionComment(string body, string action = CommentActions.Created, long? parentId = null)
         => $$"""
            {
              "action": "{{action}}",

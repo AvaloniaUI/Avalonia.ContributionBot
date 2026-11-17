@@ -157,10 +157,10 @@ public sealed class IssueCommentEventHandlerTests
     }
 
     [Theory]
-    [InlineData("@avalonia-bot agree", "edited", true, "open", "Ignoring issue comment action 'edited'.")]
-    [InlineData("@avalonia-bot agree", "created", false, "open", "Ignoring comment on issue #42: not a pull request.")]
-    [InlineData("@avalonia-bot agree", "created", true, "closed", "Ignoring comment on pull request #42: the pull request is closed.")]
-    [InlineData("I agree", "created", true, "open", "Ignoring comment 555: not a bot command.")]
+    [InlineData("@avalonia-bot agree", CommentActions.Edited, true, IssueStates.Open, "Ignoring issue comment action 'edited'.")]
+    [InlineData("@avalonia-bot agree", CommentActions.Created, false, IssueStates.Open, "Ignoring comment on issue #42: not a pull request.")]
+    [InlineData("@avalonia-bot agree", CommentActions.Created, true, IssueStates.Closed, "Ignoring comment on pull request #42: the pull request is closed.")]
+    [InlineData("I agree", CommentActions.Created, true, IssueStates.Open, "Ignoring comment 555: not a bot command.")]
     public async Task Ignores_Irrelevant_Comments(string body, string action, bool isPullRequest, string state, string expectedLog)
     {
         SetAuthor(VouchStatus.Vouched, signed: false);

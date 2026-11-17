@@ -13,6 +13,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="../../templates/*.md" LogicalName="Templates.%(Filename).md"
+                      Link="Templates/%(Filename)%(Extension)"
+                      Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="Avalonia.ContributionBot.Tests" />
   </ItemGroup>
 

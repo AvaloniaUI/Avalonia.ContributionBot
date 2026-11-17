@@ -1,9 +1,13 @@
 using System.CommandLine.Help;
 using Avalonia.ContributionBot.Configuration;
+using Avalonia.ContributionBot.Evaluation;
 using Avalonia.ContributionBot.Events;
 using Avalonia.ContributionBot.GitHub;
 using Avalonia.ContributionBot.Logging;
+using Avalonia.ContributionBot.Storage;
 using Microsoft.Extensions.Logging;
+
+namespace Avalonia.ContributionBot;
 
 internal static partial class Program
 {
@@ -76,8 +80,21 @@ internal static partial class Program
             if (settings.DryRun)
                 github = new DryRunGitHubClient(github, loggerFactory.CreateLogger<DryRunGitHubClient>());
 
+            var store = new ContributorStore(
+                github,
+                settings.StoreRepository,
+                settings.StoreBranch,
+                settings.StorePath,
+                loggerFactory.CreateLogger<ContributorStore>());
+
+            var evaluator = new PullRequestEvaluator(
+                github,
+                store,
+                settings,
+                loggerFactory.CreateLogger<PullRequestEvaluator>());
+
             var dispatcher = new EventDispatcher(
-                new PullRequestEventHandler(loggerFactory.CreateLogger<PullRequestEventHandler>()),
+                new PullRequestEventHandler(evaluator, loggerFactory.CreateLogger<PullRequestEventHandler>()),
                 new IssueCommentEventHandler(settings, loggerFactory.CreateLogger<IssueCommentEventHandler>()),
                 new DiscussionCommentEventHandler(settings, loggerFactory.CreateLogger<DiscussionCommentEventHandler>()),
                 loggerFactory.CreateLogger<EventDispatcher>());

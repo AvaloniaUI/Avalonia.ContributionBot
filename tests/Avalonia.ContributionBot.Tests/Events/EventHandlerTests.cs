@@ -1,7 +1,9 @@
 using System.Text.Json;
-using Avalonia.ContributionBot.Configuration;
+using Avalonia.ContributionBot.Evaluation;
 using Avalonia.ContributionBot.Events;
 using Avalonia.ContributionBot.GitHub;
+using Avalonia.ContributionBot.Storage;
+using Avalonia.ContributionBot.Tests.GitHub;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
@@ -9,20 +11,6 @@ namespace Avalonia.ContributionBot.Tests.Events;
 
 public sealed class EventHandlerTests
 {
-    private static readonly BotSettings s_settings = new()
-    {
-        EventName = "test",
-        EventFile = "event.json",
-        CommandPrefix = "@avalonia-bot",
-        StoreRepository = new RepositoryName("AvaloniaUI", "Store"),
-        StoreBranch = "main",
-        StorePath = "contributors.json",
-        ClaUrl = new Uri("https://example.com/CLA.md"),
-        IntroductionUrl = new Uri("https://example.com/discussions"),
-        StatusContext = "CLA",
-        DryRun = false
-    };
-
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
     private static T Parse<T>(string json)
@@ -38,14 +26,29 @@ public sealed class EventHandlerTests
     [Theory]
     [InlineData("opened")]
     [InlineData("reopened")]
-    [InlineData("synchronize")]
-    public async Task Pull_Request_Handler_Handles_Supported_Actions(string action)
+    public async Task Pull_Request_Handler_Evaluates_Opened_Pull_Requests(string action)
     {
-        var logger = new FakeLogger<PullRequestEventHandler>();
+        var github = new FakeGitHubClient();
+        var payload = Parse<PullRequestEvent>(SamplePayloads.PullRequest(action));
 
-        await new PullRequestEventHandler(logger).HandleAsync(Parse<PullRequestEvent>(SamplePayloads.PullRequest(action)), Token);
+        await CreatePullRequestHandler(github).HandleAsync(payload, Token);
 
-        Assert.Equal($"Pull request AvaloniaUI/Avalonia#42 by contributor: {action} (head abc123).", GetSingleInformation(logger));
+        Assert.Single(github.Statuses);
+        Assert.Single(github.GetComments(42));
+        Assert.Equal([42], github.ClosedPullRequests);
+    }
+
+    [Fact]
+    public async Task Pull_Request_Handler_Only_Updates_Status_On_Synchronize()
+    {
+        var github = new FakeGitHubClient();
+        var payload = Parse<PullRequestEvent>(SamplePayloads.PullRequest("synchronize"));
+
+        await CreatePullRequestHandler(github).HandleAsync(payload, Token);
+
+        Assert.Equal("abc123", Assert.Single(github.Statuses).Sha);
+        Assert.Empty(github.GetComments(42));
+        Assert.Empty(github.ClosedPullRequests);
     }
 
     [Theory]
@@ -54,11 +57,14 @@ public sealed class EventHandlerTests
     [InlineData("labeled")]
     public async Task Pull_Request_Handler_Ignores_Other_Actions(string action)
     {
+        var github = new FakeGitHubClient();
         var logger = new FakeLogger<PullRequestEventHandler>();
+        var payload = Parse<PullRequestEvent>(SamplePayloads.PullRequest(action));
 
-        await new PullRequestEventHandler(logger).HandleAsync(Parse<PullRequestEvent>(SamplePayloads.PullRequest(action)), Token);
+        await CreatePullRequestHandler(github, logger).HandleAsync(payload, Token);
 
         Assert.Equal($"Ignoring pull request action '{action}'.", GetSingleInformation(logger));
+        Assert.Empty(github.Statuses);
     }
 
     [Fact]
@@ -67,7 +73,7 @@ public sealed class EventHandlerTests
         var logger = new FakeLogger<IssueCommentEventHandler>();
         var payload = Parse<IssueCommentEvent>(SamplePayloads.IssueComment("@avalonia-bot agree"));
 
-        await new IssueCommentEventHandler(s_settings, logger).HandleAsync(payload, Token);
+        await new IssueCommentEventHandler(TestSettings.Default, logger).HandleAsync(payload, Token);
 
         Assert.Equal("Command 'agree' from commenter on pull request AvaloniaUI/Avalonia#42.", GetSingleInformation(logger));
     }
@@ -83,7 +89,7 @@ public sealed class EventHandlerTests
         var logger = new FakeLogger<IssueCommentEventHandler>();
         var payload = Parse<IssueCommentEvent>(SamplePayloads.IssueComment(body, action, isPullRequest, state));
 
-        await new IssueCommentEventHandler(s_settings, logger).HandleAsync(payload, Token);
+        await new IssueCommentEventHandler(TestSettings.Default, logger).HandleAsync(payload, Token);
 
         Assert.Equal(expectedLog, GetSingleInformation(logger));
     }
@@ -94,7 +100,7 @@ public sealed class EventHandlerTests
         var logger = new FakeLogger<DiscussionCommentEventHandler>();
         var payload = Parse<DiscussionCommentEvent>(SamplePayloads.DiscussionComment("@avalonia-bot vouch"));
 
-        await new DiscussionCommentEventHandler(s_settings, logger).HandleAsync(payload, Token);
+        await new DiscussionCommentEventHandler(TestSettings.Default, logger).HandleAsync(payload, Token);
 
         Assert.Equal("Command 'vouch' from maintainer on discussion AvaloniaUI/Avalonia#7.", GetSingleInformation(logger));
     }
@@ -107,8 +113,26 @@ public sealed class EventHandlerTests
         var logger = new FakeLogger<DiscussionCommentEventHandler>();
         var payload = Parse<DiscussionCommentEvent>(SamplePayloads.DiscussionComment(body, action));
 
-        await new DiscussionCommentEventHandler(s_settings, logger).HandleAsync(payload, Token);
+        await new DiscussionCommentEventHandler(TestSettings.Default, logger).HandleAsync(payload, Token);
 
         Assert.Equal(expectedLog, GetSingleInformation(logger));
+    }
+
+    private static PullRequestEventHandler CreatePullRequestHandler(
+        FakeGitHubClient github,
+        FakeLogger<PullRequestEventHandler>? logger = null)
+    {
+        var settings = TestSettings.Default;
+        github.SetContent(settings.StorePath, ContributorsDocumentSerializer.Serialize(new ContributorsDocument { Contributors = [] }));
+
+        var store = new ContributorStore(
+            github,
+            settings.StoreRepository,
+            settings.StoreBranch,
+            settings.StorePath,
+            new FakeLogger<ContributorStore>());
+
+        var evaluator = new PullRequestEvaluator(github, store, settings, new FakeLogger<PullRequestEvaluator>());
+        return new PullRequestEventHandler(evaluator, logger ?? new FakeLogger<PullRequestEventHandler>());
     }
 }

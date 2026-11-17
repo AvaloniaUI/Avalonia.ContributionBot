@@ -1,5 +1,6 @@
 using Avalonia.ContributionBot.GitHub;
 using Avalonia.ContributionBot.Storage;
+using Avalonia.ContributionBot.Tests.GitHub;
 using Microsoft.Extensions.Logging.Testing;
 
 namespace Avalonia.ContributionBot.Tests.Storage;
@@ -8,7 +9,7 @@ public sealed class ContributorStoreTests
 {
     private const string Path = "contributors.json";
 
-    private readonly FakeFileGitHubClient _github = new();
+    private readonly FakeGitHubClient _github = new();
     private readonly ContributorStore _store;
 
     public ContributorStoreTests()

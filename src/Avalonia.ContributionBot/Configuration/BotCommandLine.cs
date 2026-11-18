@@ -23,6 +23,7 @@ public sealed class BotCommandLine
             ClaUrl,
             IntroductionUrl,
             StatusContext,
+            ClosedLabel,
             DryRun
         };
 
@@ -79,6 +80,10 @@ public sealed class BotCommandLine
         "Context name of the commit status.",
         "Avalonia Contribution / CLA");
 
+    public Option<string> ClosedLabel { get; } = OptionalStringOption(
+        "--closed-label",
+        "Label added to pull requests closed by the bot, and removed when a recheck reopens them. No label is added if not specified.");
+
     public Option<bool> DryRun { get; } = new("--dry-run")
     {
         Description = "Log write operations instead of performing them."
@@ -103,6 +108,7 @@ public sealed class BotCommandLine
             ClaUrl = parseResult.GetRequiredValue(ClaUrl),
             IntroductionUrl = parseResult.GetRequiredValue(IntroductionUrl),
             StatusContext = parseResult.GetRequiredValue(StatusContext),
+            ClosedLabel = parseResult.GetValue(ClosedLabel),
             DryRun = parseResult.GetValue(DryRun)
         };
     }
@@ -116,14 +122,23 @@ public sealed class BotCommandLine
         else
             option.DefaultValueFactory = _ => defaultValue;
 
-        option.Validators.Add(result =>
-        {
-            if (result.GetValueOrDefault<string>().Length == 0)
-                result.AddError($"Option {name} must not be empty.");
-        });
-
+        AddNotEmptyValidator(option);
         return option;
     }
+
+    private static Option<string> OptionalStringOption(string name, string description)
+    {
+        var option = new Option<string>(name) { Description = description };
+        AddNotEmptyValidator(option);
+        return option;
+    }
+
+    private static void AddNotEmptyValidator(Option<string> option)
+        => option.Validators.Add(result =>
+        {
+            if (result.GetValueOrDefault<string>().Length == 0)
+                result.AddError($"Option {option.Name} must not be empty.");
+        });
 
     private static Option<Uri> UrlOption(string name, string description, Uri? defaultValue = null)
     {

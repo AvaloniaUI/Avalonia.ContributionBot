@@ -363,6 +363,39 @@ public sealed class GitHubClientTests
     }
 
     [Fact]
+    public async Task Adds_Label()
+    {
+        var handler = new FakeHttpHandler()
+            .On(
+                HttpMethod.Post,
+                "/repos/AvaloniaUI/Avalonia/issues/42/labels",
+                HttpStatusCode.OK,
+                """[{ "name": "not vouched" }]""");
+
+        await CreateClient(handler).AddLabelAsync(s_repository, 42, "not vouched", Token);
+
+        var labels = Assert.Single(handler.Requests).GetJsonBody().GetProperty("labels");
+        Assert.Equal("not vouched", Assert.Single(labels.EnumerateArray()).GetString());
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.OK)]
+    [InlineData(HttpStatusCode.NotFound)]
+    public async Task Removes_Label(HttpStatusCode status)
+    {
+        var handler = new FakeHttpHandler()
+            .On(
+                HttpMethod.Delete,
+                "/repos/AvaloniaUI/Avalonia/issues/42/labels/not%20vouched",
+                status,
+                "[]");
+
+        await CreateClient(handler).RemoveLabelAsync(s_repository, 42, "not vouched", Token);
+
+        Assert.Single(handler.Requests);
+    }
+
+    [Fact]
     public async Task Gets_Account_That_Last_Closed_Pull_Request()
     {
         var handler = new FakeHttpHandler()

@@ -28,6 +28,16 @@ public interface IGitHubClient
 
     Task ReopenPullRequestAsync(RepositoryName repository, int number, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Adds a label to an issue or pull request.
+    /// </summary>
+    Task AddLabelAsync(RepositoryName repository, int number, string label, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Removes a label from an issue or pull request, if it has that label.
+    /// </summary>
+    Task RemoveLabelAsync(RepositoryName repository, int number, string label, CancellationToken cancellationToken);
+
     Task CreateCommitStatusAsync(RepositoryName repository, string sha, CommitStatus status, CancellationToken cancellationToken);
 
     /// <summary>

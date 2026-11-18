@@ -34,6 +34,9 @@ public sealed class BotSettings
     /// <summary>The context name of the commit status set on pull requests.</summary>
     public required string StatusContext { get; init; }
 
+    /// <summary>The label added to pull requests closed by the bot, or null to not label pull requests.</summary>
+    public string? ClosedLabel { get; init; }
+
     /// <summary>Whether write operations are logged instead of performed.</summary>
     public required bool DryRun { get; init; }
 }

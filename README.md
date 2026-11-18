@@ -2,7 +2,7 @@
 
 A GitHub Actions bot that combines two checks on pull requests:
 
-- **Vouching**: only contributors vouched for by a maintainer may open pull requests. Pull requests from anyone else are closed with a comment explaining how to get vouched for. For more information about vouching, see the [Vouch project](https://github.com/mitchellh/vouch), which inspired this one.
+- **Vouching**: only contributors vouched for by a maintainer may open pull requests. Pull requests from anyone else are closed with a comment explaining how to get vouched for, and optionally labeled. For more information about vouching, see the [Vouch project](https://github.com/mitchellh/vouch), which inspired this one.
 - **Contributor License Agreement**: contributors who are vouched for must accept the CLA before their pull request can be merged, by commenting `!contribution-bot agree`.
 
 Maintainers vouch for contributors with commands in discussions. Vouches and CLA signatures are stored in a JSON file in a private repository, shared by every repository using the bot.
@@ -46,7 +46,7 @@ The bot runs as a GitHub App, which gives its comments an identity and lets it w
      |---|---|---|
      | Contents | Read and write | Updating `contributors.json` in the store repository |
      | Discussions | Read and write | Replying to discussion commands |
-     | Issues | Read and write | Commenting on pull requests |
+     | Issues | Read and write | Commenting on and labeling pull requests |
      | Pull requests | Read and write | Closing pull requests |
      | Commit statuses | Read and write | Posting the commit status |
      | Metadata | Read-only | Required by GitHub |
@@ -95,13 +95,14 @@ The workflow runs the bot on `pull_request_target`, which runs in the context of
 | Input | Required | Default | Description |
 |---|---|---|---|
 | `client-id` | Yes | | Client ID of the GitHub App |
-| `store-repository` | Yes | | Repository holding the contributors file (`owner/name`), owned by the same account as the calling repository |
+| `store-repository` | Yes | | Repository holding the contributors file (`owner/name`) |
 | `command-prefix` | Yes | | Prefix starting every bot command |
 | `store-branch` | No | `main` | Branch holding the contributors file |
 | `store-path` | No | `contributors.json` | Path of the contributors file |
 | `cla-url` | No | Avalonia's CLA | Public URL of the Contributor License Agreement |
 | `introduction-url` | No | Avalonia's introductions | URL where new contributors introduce themselves |
 | `status-context` | No | `Avalonia Contribution / CLA` | Context name of the commit status |
+| `closed-label` | No | | Label added to pull requests closed by the bot |
 | `dry-run` | No | `false` | Log write operations instead of performing them |
 
 | Secret | Description |

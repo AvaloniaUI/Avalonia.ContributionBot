@@ -35,6 +35,10 @@ on:
         description: Context name of the commit status. Defaults to "Avalonia Contribution / CLA".
         type: string
         required: false
+      closed-label:
+        description: Label added to pull requests closed by the bot. No label is added if empty.
+        type: string
+        required: false
       dry-run:
         description: Log write operations instead of performing them.
         type: boolean
@@ -104,4 +108,5 @@ jobs:
           cla-url: ${{ inputs.cla-url }}
           introduction-url: ${{ inputs.introduction-url }}
           status-context: ${{ inputs.status-context }}
+          closed-label: ${{ inputs.closed-label }}
           dry-run: ${{ inputs.dry-run }}

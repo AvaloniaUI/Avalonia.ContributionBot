@@ -56,6 +56,18 @@ public sealed partial class DryRunGitHubClient(IGitHubClient inner, ILogger<DryR
         return Task.CompletedTask;
     }
 
+    public Task AddLabelAsync(RepositoryName repository, int number, string label, CancellationToken cancellationToken)
+    {
+        LogAddLabel(logger, label, repository, number);
+        return Task.CompletedTask;
+    }
+
+    public Task RemoveLabelAsync(RepositoryName repository, int number, string label, CancellationToken cancellationToken)
+    {
+        LogRemoveLabel(logger, label, repository, number);
+        return Task.CompletedTask;
+    }
+
     public Task CreateCommitStatusAsync(RepositoryName repository, string sha, CommitStatus status, CancellationToken cancellationToken)
     {
         LogCommitStatus(logger, status.Context, repository, sha, status.State, status.Description);
@@ -105,6 +117,12 @@ public sealed partial class DryRunGitHubClient(IGitHubClient inner, ILogger<DryR
 
     [LoggerMessage(Level = LogLevel.Information, Message = "[dry-run] Would reopen pull request {Repository}#{Number}.")]
     private static partial void LogReopenPullRequest(ILogger logger, RepositoryName repository, int number);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "[dry-run] Would add label '{Label}' to {Repository}#{Number}.")]
+    private static partial void LogAddLabel(ILogger logger, string label, RepositoryName repository, int number);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "[dry-run] Would remove label '{Label}' from {Repository}#{Number}.")]
+    private static partial void LogRemoveLabel(ILogger logger, string label, RepositoryName repository, int number);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "[dry-run] Would set status '{Context}' on {Repository}@{Sha} to {State}: {Description}")]
     private static partial void LogCommitStatus(ILogger logger, string context, RepositoryName repository, string sha, CommitState state, string description);

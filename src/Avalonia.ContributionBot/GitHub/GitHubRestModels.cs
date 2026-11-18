@@ -188,6 +188,11 @@ internal sealed class UpdatePullRequestRequest
     public required string State { get; init; }
 }
 
+internal sealed class AddLabelsRequest
+{
+    public required List<string> Labels { get; init; }
+}
+
 internal sealed class CommitStatusRequest
 {
     public required string State { get; init; }
@@ -222,6 +227,7 @@ internal sealed class ErrorResponse
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower,
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+[JsonSerializable(typeof(AddLabelsRequest))]
 [JsonSerializable(typeof(BlobResponse))]
 [JsonSerializable(typeof(CollaboratorPermission))]
 [JsonSerializable(typeof(CommentRequest))]

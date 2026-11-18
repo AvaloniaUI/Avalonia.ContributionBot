@@ -29,6 +29,9 @@ inputs:
   status-context:
     description: Context name of the commit status. Defaults to "Avalonia Contribution / CLA".
     required: false
+  closed-label:
+    description: Label added to pull requests closed by the bot. No label is added if empty.
+    required: false
   dry-run:
     description: Log write operations instead of performing them.
     required: false
@@ -74,6 +77,7 @@ runs:
         CLA_URL: ${{ inputs.cla-url }}
         INTRODUCTION_URL: ${{ inputs.introduction-url }}
         STATUS_CONTEXT: ${{ inputs.status-context }}
+        CLOSED_LABEL: ${{ inputs.closed-label }}
         DRY_RUN: ${{ inputs.dry-run }}
       run: |
         set -euo pipefail
@@ -91,6 +95,7 @@ runs:
         if [[ -n "$CLA_URL" ]]; then args+=(--cla-url "$CLA_URL"); fi
         if [[ -n "$INTRODUCTION_URL" ]]; then args+=(--introduction-url "$INTRODUCTION_URL"); fi
         if [[ -n "$STATUS_CONTEXT" ]]; then args+=(--status-context "$STATUS_CONTEXT"); fi
+        if [[ -n "$CLOSED_LABEL" ]]; then args+=(--closed-label "$CLOSED_LABEL"); fi
         if [[ "$DRY_RUN" == "true" ]]; then args+=(--dry-run); fi
 
         "$RUNNER_TEMP/avalonia-contribution-bot" "${args[@]}"

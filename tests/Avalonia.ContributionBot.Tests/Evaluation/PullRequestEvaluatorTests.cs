@@ -1,4 +1,5 @@
 using Avalonia.ContributionBot.Comments;
+using Avalonia.ContributionBot.Configuration;
 using Avalonia.ContributionBot.Evaluation;
 using Avalonia.ContributionBot.GitHub;
 using Avalonia.ContributionBot.Storage;
@@ -18,10 +19,13 @@ public sealed class PullRequestEvaluatorTests
     private const long DenouncedId = 3;
     private const long UnknownId = 99;
 
+    private const string ClosedLabel = "not-vouched";
+
     private static readonly RepositoryName s_repository = new("AvaloniaUI", "Avalonia");
 
     private readonly FakeGitHubClient _github = new();
     private readonly FakeLogger<PullRequestEvaluator> _logger = new();
+    private readonly ContributorStore _store;
     private readonly PullRequestEvaluator _evaluator;
 
     public PullRequestEvaluatorTests()
@@ -39,15 +43,18 @@ public sealed class PullRequestEvaluatorTests
 
         _github.SetContent(settings.StorePath, ContributorsDocumentSerializer.Serialize(document));
 
-        var store = new ContributorStore(
+        _store = new ContributorStore(
             _github,
             settings.StoreRepository,
             settings.StoreBranch,
             settings.StorePath,
             new FakeLogger<ContributorStore>());
 
-        _evaluator = new PullRequestEvaluator(_github, store, settings, _logger);
+        _evaluator = CreateEvaluator(settings);
     }
+
+    private PullRequestEvaluator CreateEvaluator(BotSettings settings)
+        => new(_github, _store, settings, _logger);
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
@@ -93,6 +100,39 @@ public sealed class PullRequestEvaluatorTests
         AssertStatus(CommitState.Failure);
         AssertSingleComment(BotCommentTemplate.Denounced, "denounced");
         Assert.Equal([Number], _github.ClosedPullRequests);
+    }
+
+    [Theory]
+    [InlineData(UnknownId, "newcomer")]
+    [InlineData(DenouncedId, "denounced")]
+    public async Task Adds_Closed_Label_When_Closing(long id, string login)
+    {
+        var evaluator = CreateEvaluator(TestSettings.Create(ClosedLabel));
+
+        await evaluator.EvaluateAsync(s_repository, CreatePullRequest(id, login), Token);
+
+        Assert.Equal([Number], _github.ClosedPullRequests);
+        Assert.Equal([ClosedLabel], _github.Labels[Number]);
+    }
+
+    [Fact]
+    public async Task Does_Not_Label_When_No_Closed_Label_Is_Set()
+    {
+        await _evaluator.EvaluateAsync(s_repository, CreatePullRequest(UnknownId, "newcomer"), Token);
+
+        Assert.Equal([Number], _github.ClosedPullRequests);
+        Assert.Empty(_github.Labels);
+    }
+
+    [Fact]
+    public async Task Does_Not_Label_Pull_Request_Already_Closed()
+    {
+        var evaluator = CreateEvaluator(TestSettings.Create(ClosedLabel));
+
+        await evaluator.EvaluateAsync(s_repository, CreatePullRequest(UnknownId, "newcomer", state: IssueStates.Closed), Token);
+
+        Assert.Empty(_github.ClosedPullRequests);
+        Assert.Empty(_github.Labels);
     }
 
     [Fact]
@@ -164,6 +204,30 @@ public sealed class PullRequestEvaluatorTests
         AssertStatus(CommitState.Failure);
         AssertSingleComment(BotCommentTemplate.ClaRequired, "unsigned");
         Assert.Empty(_github.ClosedPullRequests);
+    }
+
+    [Fact]
+    public async Task Removes_Closed_Label_When_Reopening()
+    {
+        _github.Labels[Number] = ["bug", ClosedLabel];
+        var evaluator = CreateEvaluator(TestSettings.Create(ClosedLabel));
+
+        await evaluator.EvaluateAsync(s_repository, CreatePullRequest(UnsignedId, "unsigned", state: IssueStates.Closed), Token);
+
+        Assert.Equal([Number], _github.ReopenedPullRequests);
+        Assert.Equal(["bug"], _github.Labels[Number]);
+    }
+
+    [Fact]
+    public async Task Keeps_Closed_Label_When_Pull_Request_Cannot_Be_Reopened()
+    {
+        _github.RejectReopen = true;
+        _github.Labels[Number] = [ClosedLabel];
+        var evaluator = CreateEvaluator(TestSettings.Create(ClosedLabel));
+
+        await evaluator.EvaluateAsync(s_repository, CreatePullRequest(UnsignedId, "unsigned", state: IssueStates.Closed), Token);
+
+        Assert.Equal([ClosedLabel], _github.Labels[Number]);
     }
 
     [Theory]

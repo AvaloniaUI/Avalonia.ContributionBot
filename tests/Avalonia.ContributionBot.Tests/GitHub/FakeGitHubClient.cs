@@ -38,6 +38,9 @@ internal sealed class FakeGitHubClient : IGitHubClient
     /// <summary>Whether reopening fails with 422, like GitHub does when the head branch has been deleted.</summary>
     public bool RejectReopen { get; set; }
 
+    /// <summary>The labels of each pull request, by number.</summary>
+    public Dictionary<int, List<string>> Labels { get; } = [];
+
     /// <summary>The account that last closed each pull request, by number.</summary>
     public Dictionary<int, GitHubUser> ClosedBy { get; } = [];
 
@@ -159,6 +162,25 @@ internal sealed class FakeGitHubClient : IGitHubClient
             throw new GitHubApiException(HttpStatusCode.UnprocessableEntity, $"PATCH pull request {number}", "state cannot be changed");
 
         ReopenedPullRequests.Add(number);
+        return Task.CompletedTask;
+    }
+
+    public Task AddLabelAsync(RepositoryName repository, int number, string label, CancellationToken cancellationToken)
+    {
+        if (!Labels.TryGetValue(number, out var labels))
+            Labels[number] = labels = [];
+
+        if (!labels.Contains(label))
+            labels.Add(label);
+
+        return Task.CompletedTask;
+    }
+
+    public Task RemoveLabelAsync(RepositoryName repository, int number, string label, CancellationToken cancellationToken)
+    {
+        if (Labels.TryGetValue(number, out var labels))
+            labels.Remove(label);
+
         return Task.CompletedTask;
     }
 

@@ -104,23 +104,37 @@ public sealed class GitHubClient(HttpClient http) : IGitHubClient
         return new RepositoryFile { Content = DecodeBase64(blob.Content), Sha = blob.Sha };
     }
 
-    public Task<IssueComment> CreateIssueCommentAsync(RepositoryName repository, int number, string body, CancellationToken cancellationToken)
-        => SendJsonAsync(
-            HttpMethod.Post,
-            $"{RepositoryPath(repository)}/issues/{number}/comments",
-            new CommentRequest { Body = body },
-            GitHubRestJsonContext.Default.CommentRequest,
-            GitHubRestJsonContext.Default.IssueComment,
-            cancellationToken);
+    public async Task<IssueComment> CreateIssueCommentAsync(RepositoryName repository, int number, string body, CancellationToken cancellationToken)
+    {
+        var commentRequest = new CommentRequest
+        {
+            Body = body
+        };
 
-    public Task<IssueComment> UpdateIssueCommentAsync(RepositoryName repository, long commentId, string body, CancellationToken cancellationToken)
-        => SendJsonAsync(
-            HttpMethod.Patch,
-            $"{RepositoryPath(repository)}/issues/comments/{commentId}",
-            new CommentRequest { Body = body },
-            GitHubRestJsonContext.Default.CommentRequest,
-            GitHubRestJsonContext.Default.IssueComment,
-            cancellationToken);
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"{RepositoryPath(repository)}/issues/{number}/comments")
+        {
+            Content = JsonContent.Create(commentRequest, GitHubRestJsonContext.Default.CommentRequest)
+        };
+
+        using var response = await SendAsync(request, cancellationToken);
+        return await ReadAsync(response, GitHubRestJsonContext.Default.IssueComment, cancellationToken);
+    }
+
+    public async Task<IssueComment> UpdateIssueCommentAsync(RepositoryName repository, long commentId, string body, CancellationToken cancellationToken)
+    {
+        var commentRequest = new CommentRequest
+        {
+            Body = body
+        };
+
+        using var request = new HttpRequestMessage(HttpMethod.Patch, $"{RepositoryPath(repository)}/issues/comments/{commentId}")
+        {
+            Content = JsonContent.Create(commentRequest, GitHubRestJsonContext.Default.CommentRequest)
+        };
+
+        using var response = await SendAsync(request, cancellationToken);
+        return await ReadAsync(response, GitHubRestJsonContext.Default.IssueComment, cancellationToken);
+    }
 
     public Task ClosePullRequestAsync(RepositoryName repository, int number, CancellationToken cancellationToken)
         => SetPullRequestStateAsync(repository, number, IssueStates.Closed, cancellationToken);
@@ -128,14 +142,49 @@ public sealed class GitHubClient(HttpClient http) : IGitHubClient
     public Task ReopenPullRequestAsync(RepositoryName repository, int number, CancellationToken cancellationToken)
         => SetPullRequestStateAsync(repository, number, IssueStates.Open, cancellationToken);
 
-    private Task<PullRequest> SetPullRequestStateAsync(RepositoryName repository, int number, string state, CancellationToken cancellationToken)
-        => SendJsonAsync(
-            HttpMethod.Patch,
-            $"{RepositoryPath(repository)}/pulls/{number}",
-            new UpdatePullRequestRequest { State = state },
-            GitHubRestJsonContext.Default.UpdatePullRequestRequest,
-            GitHubRestJsonContext.Default.PullRequest,
-            cancellationToken);
+    public async Task AddLabelAsync(RepositoryName repository, int number, string label, CancellationToken cancellationToken)
+    {
+        var body = new AddLabelsRequest
+        {
+            Labels = [label]
+        };
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"{RepositoryPath(repository)}/issues/{number}/labels")
+        {
+            Content = JsonContent.Create(body, GitHubRestJsonContext.Default.AddLabelsRequest)
+        };
+
+        using var response = await SendAsync(request, cancellationToken);
+    }
+
+    public async Task RemoveLabelAsync(RepositoryName repository, int number, string label, CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(
+            HttpMethod.Delete,
+            $"{RepositoryPath(repository)}/issues/{number}/labels/{Uri.EscapeDataString(label)}");
+
+        using var response = await http.SendAsync(request, cancellationToken);
+        if (response.StatusCode == HttpStatusCode.NotFound)
+            return;
+
+        await EnsureSuccessAsync(request, response, cancellationToken);
+    }
+
+    private async Task<PullRequest> SetPullRequestStateAsync(RepositoryName repository, int number, string state, CancellationToken cancellationToken)
+    {
+        var body = new UpdatePullRequestRequest
+        {
+            State = state
+        };
+
+        using var request = new HttpRequestMessage(HttpMethod.Patch, $"{RepositoryPath(repository)}/pulls/{number}")
+        {
+            Content = JsonContent.Create(body, GitHubRestJsonContext.Default.UpdatePullRequestRequest)
+        };
+
+        using var response = await SendAsync(request, cancellationToken);
+        return await ReadAsync(response, GitHubRestJsonContext.Default.PullRequest, cancellationToken);
+    }
 
     public async Task CreateCommitStatusAsync(RepositoryName repository, string sha, CommitStatus status, CancellationToken cancellationToken)
     {
@@ -292,23 +341,6 @@ public sealed class GitHubClient(HttpClient http) : IGitHubClient
     private async Task<T> GetAsync<T>(string url, JsonTypeInfo<T> responseType, CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
-        using var response = await SendAsync(request, cancellationToken);
-        return await ReadAsync(response, responseType, cancellationToken);
-    }
-
-    private async Task<TResponse> SendJsonAsync<TRequest, TResponse>(
-        HttpMethod method,
-        string url,
-        TRequest body,
-        JsonTypeInfo<TRequest> requestType,
-        JsonTypeInfo<TResponse> responseType,
-        CancellationToken cancellationToken)
-    {
-        using var request = new HttpRequestMessage(method, url)
-        {
-            Content = JsonContent.Create(body, requestType)
-        };
-
         using var response = await SendAsync(request, cancellationToken);
         return await ReadAsync(response, responseType, cancellationToken);
     }

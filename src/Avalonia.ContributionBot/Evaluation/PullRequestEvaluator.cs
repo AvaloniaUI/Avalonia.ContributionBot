@@ -179,6 +179,12 @@ public sealed partial class PullRequestEvaluator(
 
         await github.ClosePullRequestAsync(repository, pullRequest.Number, cancellationToken);
         LogClosed(logger, repository, pullRequest.Number);
+
+        if (settings.ClosedLabel is { } label)
+        {
+            await github.AddLabelAsync(repository, pullRequest.Number, label, cancellationToken);
+            LogLabelAdded(logger, label, repository, pullRequest.Number);
+        }
     }
 
     private async Task<bool> TryReopenAsync(RepositoryName repository, PullRequest pullRequest, CancellationToken cancellationToken)
@@ -194,6 +200,13 @@ public sealed partial class PullRequestEvaluator(
         }
 
         LogReopened(logger, repository, pullRequest.Number);
+
+        if (settings.ClosedLabel is { } label)
+        {
+            await github.RemoveLabelAsync(repository, pullRequest.Number, label, cancellationToken);
+            LogLabelRemoved(logger, label, repository, pullRequest.Number);
+        }
+
         return true;
     }
 
@@ -211,6 +224,12 @@ public sealed partial class PullRequestEvaluator(
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Reopened {Repository}#{Number}.")]
     private static partial void LogReopened(ILogger logger, RepositoryName repository, int number);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Added label '{Label}' to {Repository}#{Number}.")]
+    private static partial void LogLabelAdded(ILogger logger, string label, RepositoryName repository, int number);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Removed label '{Label}' from {Repository}#{Number}.")]
+    private static partial void LogLabelRemoved(ILogger logger, string label, RepositoryName repository, int number);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Couldn't reopen {Repository}#{Number}: {Error}")]
     private static partial void LogReopenFailed(ILogger logger, RepositoryName repository, int number, string error);

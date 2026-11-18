@@ -20,6 +20,33 @@ public static class GitHubEventNames
     public const string PullRequestTarget = "pull_request_target";
     public const string IssueComment = "issue_comment";
     public const string DiscussionComment = "discussion_comment";
+    public const string MergeGroup = "merge_group";
+}
+
+/// <summary>The payload of the <c>merge_group</c> event, raised when a merge queue needs the required checks of a merge group.</summary>
+public sealed class MergeGroupEvent
+{
+    /// <summary>The activity type; the one handled by the bot is <see cref="MergeGroupActions.ChecksRequested"/>.</summary>
+    public required string Action { get; init; }
+
+    public required EventMergeGroup MergeGroup { get; init; }
+
+    public required EventRepository Repository { get; init; }
+}
+
+/// <summary>
+/// The values of <see cref="MergeGroupEvent.Action"/>.
+/// </summary>
+public static class MergeGroupActions
+{
+    public const string ChecksRequested = "checks_requested";
+    public const string Destroyed = "destroyed";
+}
+
+public sealed class EventMergeGroup
+{
+    /// <summary>The SHA of the merge group commit, which needs the required checks.</summary>
+    public required string HeadSha { get; init; }
 }
 
 /// <summary>The payload of the <c>pull_request_target</c> event.</summary>

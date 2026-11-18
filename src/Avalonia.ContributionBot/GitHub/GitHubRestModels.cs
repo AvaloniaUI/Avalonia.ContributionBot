@@ -240,6 +240,7 @@ internal sealed class ErrorResponse
 [JsonSerializable(typeof(IssueCommentEvent))]
 [JsonSerializable(typeof(List<IssueComment>))]
 [JsonSerializable(typeof(List<IssueEvent>))]
+[JsonSerializable(typeof(MergeGroupEvent))]
 [JsonSerializable(typeof(PullRequest))]
 [JsonSerializable(typeof(PullRequestEvent))]
 [JsonSerializable(typeof(PutContentRequest))]

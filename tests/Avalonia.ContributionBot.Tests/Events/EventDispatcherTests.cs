@@ -10,12 +10,13 @@ public sealed class EventDispatcherTests
     private readonly RecordingHandler<PullRequestEvent> _pullRequests = new();
     private readonly RecordingHandler<IssueCommentEvent> _issueComments = new();
     private readonly RecordingHandler<DiscussionCommentEvent> _discussionComments = new();
+    private readonly RecordingHandler<MergeGroupEvent> _mergeGroups = new();
     private readonly FakeLogger<EventDispatcher> _logger = new();
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
     private EventDispatcher CreateDispatcher()
-        => new(_pullRequests, _issueComments, _discussionComments, _logger);
+        => new(_pullRequests, _issueComments, _discussionComments, _mergeGroups, _logger);
 
     [Fact]
     public async Task Dispatches_Pull_Request_Target()
@@ -70,6 +71,20 @@ public sealed class EventDispatcherTests
     }
 
     [Fact]
+    public async Task Dispatches_Merge_Group()
+    {
+        await CreateDispatcher().DispatchAsync(
+            GitHubEventNames.MergeGroup,
+            SamplePayloads.ToStream(SamplePayloads.MergeGroup(MergeGroupActions.ChecksRequested)),
+            Token);
+
+        var payload = Assert.Single(_mergeGroups.Received);
+        Assert.Equal(MergeGroupActions.ChecksRequested, payload.Action);
+        Assert.Equal("def456", payload.MergeGroup.HeadSha);
+        Assert.Equal("AvaloniaUI/Avalonia", payload.Repository.FullName);
+    }
+
+    [Fact]
     public async Task Ignores_Unsupported_Events()
     {
         await CreateDispatcher().DispatchAsync("push", SamplePayloads.ToStream("{}"), Token);
@@ -77,6 +92,7 @@ public sealed class EventDispatcherTests
         Assert.Empty(_pullRequests.Received);
         Assert.Empty(_issueComments.Received);
         Assert.Empty(_discussionComments.Received);
+        Assert.Empty(_mergeGroups.Received);
 
         var record = Assert.Single(_logger.Collector.GetSnapshot());
         Assert.Equal(LogLevel.Warning, record.Level);

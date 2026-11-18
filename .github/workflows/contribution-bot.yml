@@ -57,6 +57,7 @@ jobs:
     # Comments that can't hold a command don't start a runner. Comments posted by bots, including this one, are skipped too.
     if: >-
       github.event_name == 'pull_request_target' ||
+      (github.event_name == 'merge_group' && github.event.action == 'checks_requested') ||
       (github.event_name == 'issue_comment' && github.event.issue.pull_request &&
         github.event.comment.user.type != 'Bot' && contains(github.event.comment.body, inputs.command-prefix)) ||
       (github.event_name == 'discussion_comment' &&

@@ -13,6 +13,7 @@ public sealed partial class EventDispatcher(
     IEventHandler<PullRequestEvent> pullRequestHandler,
     IEventHandler<IssueCommentEvent> issueCommentHandler,
     IEventHandler<DiscussionCommentEvent> discussionCommentHandler,
+    IEventHandler<MergeGroupEvent> mergeGroupHandler,
     ILogger<EventDispatcher> logger)
 {
     public async Task DispatchAsync(string eventName, Stream payload, CancellationToken cancellationToken)
@@ -32,6 +33,11 @@ public sealed partial class EventDispatcher(
             case GitHubEventNames.DiscussionComment:
                 var discussionCommentEvent = await DeserializeAsync(payload, GitHubRestJsonContext.Default.DiscussionCommentEvent, cancellationToken);
                 await discussionCommentHandler.HandleAsync(discussionCommentEvent, cancellationToken);
+                break;
+
+            case GitHubEventNames.MergeGroup:
+                var mergeGroupEvent = await DeserializeAsync(payload, GitHubRestJsonContext.Default.MergeGroupEvent, cancellationToken);
+                await mergeGroupHandler.HandleAsync(mergeGroupEvent, cancellationToken);
                 break;
 
             default:

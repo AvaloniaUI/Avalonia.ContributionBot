@@ -97,6 +97,7 @@ internal static partial class Program
                 new PullRequestEventHandler(evaluator, loggerFactory.CreateLogger<PullRequestEventHandler>()),
                 new PullRequestCommentEventHandler(github, store, evaluator, settings, loggerFactory.CreateLogger<PullRequestCommentEventHandler>()),
                 new DiscussionCommentEventHandler(github, store, settings, loggerFactory.CreateLogger<DiscussionCommentEventHandler>()),
+                new MergeGroupEventHandler(github, settings, loggerFactory.CreateLogger<MergeGroupEventHandler>()),
                 loggerFactory.CreateLogger<EventDispatcher>());
 
             await using var payload = File.OpenRead(settings.EventFile);

@@ -103,6 +103,21 @@ internal static class SamplePayloads
            }
            """;
 
+    public static string MergeGroup(string action)
+        => $$"""
+           {
+             "action": "{{action}}",
+             "merge_group": {
+               "head_sha": "def456",
+               "head_ref": "refs/heads/gh-readonly-queue/main/pr-42-abc123",
+               "base_sha": "aaa111",
+               "base_ref": "refs/heads/main"
+             },
+             "repository": {{Repository}},
+             "sender": {{Sender}}
+           }
+           """;
+
     public static Stream ToStream(string json)
         => new MemoryStream(Encoding.UTF8.GetBytes(json));
 }

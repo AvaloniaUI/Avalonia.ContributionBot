@@ -72,9 +72,12 @@ The workflow creates a token for each run, limited to the calling repository and
        types: [created]
      discussion_comment:
        types: [created]
+     merge_group:
+       types: [checks_requested]
 
    jobs:
      bot:
+       name: Contribution Bot
        uses: AvaloniaUI/Avalonia.ContributionBot/.github/workflows/contribution-bot.yml@v1
        with:
          client-id: ${{ vars.CONTRIBUTION_BOT_CLIENT_ID }}

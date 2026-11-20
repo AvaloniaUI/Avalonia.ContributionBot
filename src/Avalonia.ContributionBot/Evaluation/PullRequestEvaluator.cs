@@ -104,7 +104,7 @@ public sealed partial class PullRequestEvaluator(
                 if (contributor is null || contributor.Login == author.Login)
                     return null;
 
-                var message = $"Rename {contributor.Login} to {author.Login} ({author.Id}), seen on {repository}#{pullRequest.Number}";
+                var message = $"Rename @{contributor.Login} to @{author.Login} ({author.Id}), seen on {repository}#{pullRequest.Number}";
                 contributor.Login = author.Login;
                 return message;
             },

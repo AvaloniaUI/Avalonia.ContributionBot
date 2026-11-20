@@ -146,7 +146,7 @@ public sealed partial class PullRequestCommentEventHandler(
 
         contributor.Login = user.Login;
         contributor.Cla = new ClaSignature { SignedAt = comment.CreatedAt, Source = comment.HtmlUrl };
-        return $"CLA accepted by {user.Login} ({user.Id}) in {comment.HtmlUrl}";
+        return $"CLA accepted by @{user.Login} ({user.Id}) in {comment.HtmlUrl}";
     }
 
     private async Task EvaluateAsync(RepositoryName repository, int number, CancellationToken cancellationToken)

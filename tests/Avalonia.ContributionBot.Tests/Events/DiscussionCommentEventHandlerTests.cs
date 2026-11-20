@@ -49,7 +49,7 @@ public sealed class DiscussionCommentEventHandlerTests
         Assert.Null(vouch.Reason);
         Assert.Equal(CommentUrl, vouch.Source);
 
-        Assert.Equal($"Vouch for {AuthorLogin} ({AuthorId}) by {MaintainerLogin} in {CommentUrl}", Assert.Single(_github.CommitMessages));
+        Assert.Equal($"Vouch for @{AuthorLogin} ({AuthorId}) by @{MaintainerLogin} in {CommentUrl}", Assert.Single(_github.CommitMessages));
         AssertReply(DiscussionReply.Vouched, AuthorLogin);
     }
 
@@ -65,7 +65,7 @@ public sealed class DiscussionCommentEventHandlerTests
         Assert.Null(FindContributor(AuthorId));
 
         Assert.Equal(
-            $"Vouch for {OtherLogin} ({OtherId}) by {MaintainerLogin} in {CommentUrl}\n\nknown from the forums",
+            $"Vouch for @{OtherLogin} ({OtherId}) by @{MaintainerLogin} in {CommentUrl}\n\nknown from the forums",
             Assert.Single(_github.CommitMessages));
         AssertReply(DiscussionReply.Vouched, OtherLogin);
     }
@@ -120,7 +120,7 @@ public sealed class DiscussionCommentEventHandlerTests
         Assert.Equal("spam", contributor.Vouch.Reason);
         Assert.NotNull(contributor.Cla);
 
-        Assert.StartsWith($"Denounce {AuthorLogin} ({AuthorId}) by {MaintainerLogin}", Assert.Single(_github.CommitMessages));
+        Assert.StartsWith($"Denounce @{AuthorLogin} ({AuthorId}) by @{MaintainerLogin}", Assert.Single(_github.CommitMessages));
         AssertReply(DiscussionReply.Denounced, AuthorLogin);
     }
 
@@ -146,7 +146,7 @@ public sealed class DiscussionCommentEventHandlerTests
         Assert.Null(contributor.Vouch);
         Assert.NotNull(contributor.Cla);
 
-        Assert.StartsWith($"Remove the vouch for {OtherLogin} ({OtherId})", Assert.Single(_github.CommitMessages));
+        Assert.StartsWith($"Remove the vouch for @{OtherLogin} ({OtherId})", Assert.Single(_github.CommitMessages));
         AssertReply(DiscussionReply.Unvouched, OtherLogin);
     }
 
@@ -158,7 +158,7 @@ public sealed class DiscussionCommentEventHandlerTests
         await HandleAsync("!contribution-bot unvouch @someone");
 
         Assert.Null(FindContributor(OtherId));
-        Assert.StartsWith($"Remove the denouncement of {OtherLogin} ({OtherId})", Assert.Single(_github.CommitMessages));
+        Assert.StartsWith($"Remove the denouncement of @{OtherLogin} ({OtherId})", Assert.Single(_github.CommitMessages));
         AssertReply(DiscussionReply.Undenounced, OtherLogin);
     }
 

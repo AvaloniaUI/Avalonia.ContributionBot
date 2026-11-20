@@ -149,7 +149,7 @@ public sealed partial class DiscussionCommentEventHandler(
 
         contributor.Login = target.Login;
 
-        var message = $"{verb} {target.Login} ({target.Id}) by {comment.User.Login} in {comment.HtmlUrl}";
+        var message = $"{verb} @{target.Login} ({target.Id}) by @{comment.User.Login} in {comment.HtmlUrl}";
         if (command.Reason is not null)
             message += $"\n\n{command.Reason}";
 

@@ -47,7 +47,7 @@ public sealed class PullRequestCommentEventHandlerTests
         Assert.NotNull(cla);
         Assert.Equal(s_commentDate, cla.SignedAt);
         Assert.Equal(CommentUrl, cla.Source);
-        Assert.Equal($"CLA accepted by {AuthorLogin} ({AuthorId}) in {CommentUrl}", Assert.Single(_github.CommitMessages));
+        Assert.Equal($"CLA accepted by @{AuthorLogin} ({AuthorId}) in {CommentUrl}", Assert.Single(_github.CommitMessages));
 
         AssertStatus(CommitState.Success);
         Assert.Equal(RenderComment(BotCommentTemplate.ClaAccepted), Assert.Single(_github.GetComments(Number)).Body);

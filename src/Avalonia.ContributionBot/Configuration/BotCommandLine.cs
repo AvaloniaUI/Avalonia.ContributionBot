@@ -24,6 +24,7 @@ public sealed class BotCommandLine
             IntroductionUrl,
             StatusContext,
             ClosedLabel,
+            TeamLabel,
             DryRun
         };
 
@@ -84,6 +85,10 @@ public sealed class BotCommandLine
         "--closed-label",
         "Label added to pull requests closed by the bot, and removed when a recheck reopens them. No label is added if not specified.");
 
+    public Option<string> TeamLabel { get; } = OptionalStringOption(
+        "--team-label",
+        "Label added to pull requests of repository collaborators. No label is added if not specified.");
+
     public Option<bool> DryRun { get; } = new("--dry-run")
     {
         Description = "Log write operations instead of performing them."
@@ -109,6 +114,7 @@ public sealed class BotCommandLine
             IntroductionUrl = parseResult.GetRequiredValue(IntroductionUrl),
             StatusContext = parseResult.GetRequiredValue(StatusContext),
             ClosedLabel = parseResult.GetValue(ClosedLabel),
+            TeamLabel = parseResult.GetValue(TeamLabel),
             DryRun = parseResult.GetValue(DryRun)
         };
     }

@@ -32,6 +32,9 @@ inputs:
   closed-label:
     description: Label added to pull requests closed by the bot. No label is added if empty.
     required: false
+  team-label:
+    description: Label added to pull requests of repository collaborators. No label is added if empty.
+    required: false
   dry-run:
     description: Log write operations instead of performing them.
     required: false
@@ -78,6 +81,7 @@ runs:
         INTRODUCTION_URL: ${{ inputs.introduction-url }}
         STATUS_CONTEXT: ${{ inputs.status-context }}
         CLOSED_LABEL: ${{ inputs.closed-label }}
+        TEAM_LABEL: ${{ inputs.team-label }}
         DRY_RUN: ${{ inputs.dry-run }}
       run: |
         set -euo pipefail
@@ -96,6 +100,7 @@ runs:
         if [[ -n "$INTRODUCTION_URL" ]]; then args+=(--introduction-url "$INTRODUCTION_URL"); fi
         if [[ -n "$STATUS_CONTEXT" ]]; then args+=(--status-context "$STATUS_CONTEXT"); fi
         if [[ -n "$CLOSED_LABEL" ]]; then args+=(--closed-label "$CLOSED_LABEL"); fi
+        if [[ -n "$TEAM_LABEL" ]]; then args+=(--team-label "$TEAM_LABEL"); fi
         if [[ "$DRY_RUN" == "true" ]]; then args+=(--dry-run); fi
 
         "$RUNNER_TEMP/avalonia-contribution-bot" "${args[@]}"

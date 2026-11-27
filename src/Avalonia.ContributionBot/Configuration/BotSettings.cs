@@ -37,6 +37,9 @@ public sealed class BotSettings
     /// <summary>The label added to pull requests closed by the bot, or null to not label pull requests.</summary>
     public string? ClosedLabel { get; init; }
 
+    /// <summary>The label added to pull requests of repository collaborators, or null to not label them.</summary>
+    public string? TeamLabel { get; init; }
+
     /// <summary>Whether write operations are logged instead of performed.</summary>
     public required bool DryRun { get; init; }
 }

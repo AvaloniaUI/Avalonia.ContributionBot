@@ -20,6 +20,7 @@ public sealed class PullRequestEvaluatorTests
     private const long UnknownId = 99;
 
     private const string ClosedLabel = "not-vouched";
+    private const string TeamLabel = "team";
 
     private static readonly RepositoryName s_repository = new("AvaloniaUI", "Avalonia");
 
@@ -80,6 +81,19 @@ public sealed class PullRequestEvaluatorTests
         AssertStatus(CommitState.Success);
         Assert.Empty(_github.GetComments(Number));
         Assert.Empty(_github.ClosedPullRequests);
+    }
+
+    [Theory]
+    [InlineData(CollaboratorPermissions.Write)]
+    [InlineData(CollaboratorPermissions.Admin)]
+    public async Task Adds_Team_Label_To_Pull_Request_Of_Collaborator(string permission)
+    {
+        _github.Permissions["maintainer"] = permission;
+        var evaluator = CreateEvaluator(TestSettings.Create(teamLabel: TeamLabel));
+
+        await evaluator.EvaluateAsync(s_repository, CreatePullRequest(UnknownId, "maintainer"), Token);
+
+        Assert.Equal([TeamLabel], _github.Labels[Number]);
     }
 
     [Fact]

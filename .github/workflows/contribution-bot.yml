@@ -39,6 +39,10 @@ on:
         description: Label added to pull requests closed by the bot. No label is added if empty.
         type: string
         required: false
+      team-label:
+        description: Label added to pull requests of repository collaborators. No label is added if empty.
+        type: string
+        required: false
       dry-run:
         description: Log write operations instead of performing them.
         type: boolean
@@ -110,4 +114,5 @@ jobs:
           introduction-url: ${{ inputs.introduction-url }}
           status-context: ${{ inputs.status-context }}
           closed-label: ${{ inputs.closed-label }}
+          team-label: ${{ inputs.team-label }}
           dry-run: ${{ inputs.dry-run }}

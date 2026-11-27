@@ -20,6 +20,7 @@ public sealed partial class PullRequestEvaluator(
     /// Sets the commit status, creates or updates the bot comment, and closes the pull request
     /// when its author is denounced or not vouched for.
     /// A closed pull request whose author is now allowed to contribute is reopened.
+    /// A pull request whose author is a repository collaborator gets the team label.
     /// </summary>
     public async Task EvaluateAsync(RepositoryName repository, PullRequest pullRequest, CancellationToken cancellationToken)
     {
@@ -44,6 +45,10 @@ public sealed partial class PullRequestEvaluator(
 
         switch (level)
         {
+            case ContributorLevel.Collaborator:
+                await AddTeamLabelAsync(repository, pullRequest, cancellationToken);
+                break;
+
             case ContributorLevel.ClaMissing:
                 await UpsertCommentAsync(repository, pullRequest, BotCommentTemplate.ClaRequired, cancellationToken);
                 break;
@@ -170,6 +175,15 @@ public sealed partial class PullRequestEvaluator(
 
         await github.UpdateIssueCommentAsync(repository, existing.Id, body, cancellationToken);
         LogCommentUpdated(logger, template, repository, pullRequest.Number);
+    }
+
+    private async Task AddTeamLabelAsync(RepositoryName repository, PullRequest pullRequest, CancellationToken cancellationToken)
+    {
+        if (settings.TeamLabel is not { } label)
+            return;
+
+        await github.AddLabelAsync(repository, pullRequest.Number, label, cancellationToken);
+        LogLabelAdded(logger, label, repository, pullRequest.Number);
     }
 
     private async Task CloseAsync(RepositoryName repository, PullRequest pullRequest, CancellationToken cancellationToken)

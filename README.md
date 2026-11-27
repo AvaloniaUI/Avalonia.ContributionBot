@@ -106,6 +106,7 @@ The workflow runs the bot on `pull_request_target`, which runs in the context of
 | `introduction-url` | No | Avalonia's introductions | URL where new contributors introduce themselves |
 | `status-context` | No | `Avalonia Contribution / CLA` | Context name of the commit status |
 | `closed-label` | No | | Label added to pull requests closed by the bot |
+| `team-label` | No | | Label added to pull requests of repository collaborators |
 | `dry-run` | No | `false` | Log write operations instead of performing them |
 
 | Secret | Description |

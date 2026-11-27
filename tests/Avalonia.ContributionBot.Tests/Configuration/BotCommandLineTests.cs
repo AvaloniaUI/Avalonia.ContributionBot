@@ -39,6 +39,7 @@ public sealed class BotCommandLineTests
         Assert.Equal(new Uri("https://example.com/discussions"), settings.IntroductionUrl);
         Assert.Equal("Avalonia Contribution / CLA", settings.StatusContext);
         Assert.Null(settings.ClosedLabel);
+        Assert.Null(settings.TeamLabel);
         Assert.False(settings.DryRun);
     }
 
@@ -51,6 +52,7 @@ public sealed class BotCommandLineTests
             "--store-path", "data/contributors.json",
             "--status-context", "CLA",
             "--closed-label", "not-vouched",
+            "--team-label", "team",
             "--dry-run");
 
         Assert.Equal("@other-bot", settings.CommandPrefix);
@@ -58,6 +60,7 @@ public sealed class BotCommandLineTests
         Assert.Equal("data/contributors.json", settings.StorePath);
         Assert.Equal("CLA", settings.StatusContext);
         Assert.Equal("not-vouched", settings.ClosedLabel);
+        Assert.Equal("team", settings.TeamLabel);
         Assert.True(settings.DryRun);
     }
 
@@ -69,6 +72,7 @@ public sealed class BotCommandLineTests
     [InlineData("--command-prefix", "@bot name")]
     [InlineData("--event-name", "")]
     [InlineData("--closed-label", "")]
+    [InlineData("--team-label", "")]
     public void Rejects_Invalid_Values(string option, string value)
     {
         var args = s_requiredArgs.ToList();

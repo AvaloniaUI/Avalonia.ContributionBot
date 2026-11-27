@@ -7,7 +7,7 @@ internal static class TestSettings
 {
     public static readonly BotSettings Default = Create();
 
-    public static BotSettings Create(string? closedLabel = null)
+    public static BotSettings Create(string? closedLabel = null, string? teamLabel = null)
         => new()
         {
             EventName = "test",
@@ -20,6 +20,7 @@ internal static class TestSettings
             IntroductionUrl = new Uri("https://example.com/discussions"),
             StatusContext = "CLA",
             ClosedLabel = closedLabel,
+            TeamLabel = teamLabel,
             DryRun = false
         };
 }
